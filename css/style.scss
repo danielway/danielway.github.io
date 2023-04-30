@@ -1,0 +1,221 @@
+@import 'css/fonts.css';
+
+h1, h2, h3, p, a, td {
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+p {
+    color: #6b6b6b;
+    line-height: 1.5;
+}
+
+body {
+    max-width: 750px;
+    margin: auto;
+    padding: 10px;
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+
+    .initials {
+        font-family: "Libre Baskerville", serif;
+        font-size: 2rem;
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+    }
+    
+    li {
+        display: inline-block;
+        margin: 0 0 0 10px;
+        font-size: 14px;
+
+        &.active, &:hover {
+            a {
+                color: black;
+            }
+        }
+        
+        &.active a {
+            font-weight: bold;
+        }
+        
+        a {
+            text-decoration: none;
+            color: #6e6e6e;
+        }
+        
+        &.cross {
+            font-size: 20px;
+            font-weight: bold;
+            position: relative;
+            top: 2px;
+        }
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    html {
+        background: white;
+        color: black;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    html {
+        background: black;
+        color: white;
+    }
+}
+
+article.written {
+    margin-top: 40px;
+}
+
+article.written h1 {
+    margin-bottom: 0.5rem;
+}
+
+article.written em {
+    font-size: 0.8rem;
+    color: #adadad;
+}
+
+article h1 {
+    font-size: 1.5rem;
+}
+
+article.about {
+    margin-bottom: 40px;
+}
+
+article.about h1 {
+    font-size: 3rem;
+    font-family: "Libre Baskerville", serif;
+    margin-bottom: 0;
+}
+
+article.about p.title {
+    margin: 0;
+    color: #404040;
+    font-size: 1.1rem;
+}
+
+article.about .photo {
+    float: right;
+    width: 200px;
+    height: 200px;
+    border-radius: 100px;
+    overflow: hidden;
+    margin-left: 20px;
+}
+
+article.about img {
+    width: 200px;
+    position: relative;
+    top: -25px;
+}
+
+article.writing table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+article.writing table tr {
+    border-bottom: 1px solid #ececec;
+}
+
+article.writing table tr:last-child {
+    border-bottom: none;
+}
+
+article.writing table td {
+    font-size: 0.9rem;
+    padding: 15px 0;
+    font-weight: bold;
+}
+
+article.writing table td.date {
+    font-weight: normal;
+    color: #9b9b9b;
+    width: 150px;
+}
+
+article.writing table a {
+    color: black;
+    text-decoration: none;
+}
+
+article.writing table a:hover {
+    text-decoration: underline;
+}
+
+article.projects .projects {
+    display: flex;
+    flex-direction: row;
+}
+
+article.projects .project {
+    width: calc(50% - 22px);
+    display: flex;
+
+    border: 1px solid #dadada;
+    border-radius: 10px;
+
+    height: 200px;
+    margin: 10px;
+
+    overflow: hidden;
+}
+
+article.projects .project .text {
+    width: 50%;
+    padding: 15px;
+}
+
+article.projects .project .text h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+article.projects .project .text h3 a {
+    color: black;
+    text-decoration: none;
+}
+
+article.projects .project .text h3 a:hover {
+    text-decoration: underline;
+}
+
+article.projects .project .text p {
+    font-size: 0.8rem;
+}
+
+article.projects .project .image {
+    width: 50%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+article.projects .project img {
+    min-width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+}
+
+article.changelog li {
+    list-style: none;
+    font-size: 1rem;
+    color: #505050;
+}
+
+article.changelog li em {
+    color: #a8a8a8;
+}

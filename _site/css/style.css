@@ -1,5 +1,5 @@
 @import 'css/fonts.css';
-h1, h2, h3, p, a, td {
+h1, h2, h3, p, a, td, li, em {
   font-family: Helvetica, Arial, sans-serif;
 }
 
@@ -196,9 +196,13 @@ article.projects .project img {
   object-fit: cover;
 }
 
+article.changelog h2 {
+  font-size: 1rem;
+}
+
 article.changelog li {
   list-style: none;
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: #505050;
 }
 

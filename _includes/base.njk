@@ -11,19 +11,19 @@
                     {{ "Daniel Way" if showInitials }}
                 </div>
                 <ul>
-                    <li class="active">
+                    <li {{ 'class=active' if aboutActive }}>
                         <a href="/">About</a>
                     </li>
-                    <li>
+                    <li {{ 'class=active' if writingActive }}>
                         <a href="/writing">Writing</a>
                     </li>
-                    <li>
+                    <li {{ 'class=active' if projectsActive }}>
                         <a href="/projects">Projects</a>
                     </li>
-                    <li>
+                    <li {{ 'class=active' if experienceActive }}>
                         <a href="/experience">Experience</a>
                     </li>
-                    <li>
+                    <li {{ 'class=active' if contactActive }}>
                         <a href="/contact">Contact</a>
                     </li>
                     <li class="cross">&#10013;</li>

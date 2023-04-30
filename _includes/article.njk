@@ -1,0 +1,19 @@
+---
+layout: base.njk
+---
+
+<article class="written">
+    <h1>{{ title | safe }}</h1>
+    <em>
+        Published {{ publishedDate }}. {{ 'Edited ' + editedDate + '.' if editedDate is string }}
+    </em>
+    {{ content | safe }}
+</article>
+<article class="changelog">
+    <h2>Changelog</h2>
+    <ul>
+        <li>
+            <em>April 29, 2023 -</em>
+            Published.</li>
+    </ul>
+</article>

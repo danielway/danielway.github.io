@@ -1,4 +1,4 @@
-@import 'css/fonts.css';
+@import 'fonts.css';
 h1, h2, h3, p, a, td, li, em {
   font-family: Helvetica, Arial, sans-serif;
 }

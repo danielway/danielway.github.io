@@ -10,7 +10,7 @@ p {
 
 @media (prefers-color-scheme: dark) {
   p {
-    color: white;
+    color: #8e8e8e;
   }
 }
 body {
@@ -56,7 +56,7 @@ nav li a {
 }
 @media (prefers-color-scheme: dark) {
   nav li a {
-    color: white;
+    color: #a1a1a1;
   }
 }
 nav li.cross {
@@ -74,8 +74,8 @@ html {
 
 @media (prefers-color-scheme: dark) {
   html {
-    background: #101010;
-    color: #e9e9e9;
+    background: #000000;
+    color: #ffffff;
   }
 }
 article h1 {
@@ -99,7 +99,7 @@ article.projects .project {
 
 @media (prefers-color-scheme: dark) {
   article.projects .project {
-    border: 1px solid black;
+    border: 1px solid #2f2f2f;
   }
 }
 article.projects .project .text {

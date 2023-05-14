@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="256px" width="256px" version="1.1" id="favicon" viewBox="0 0 256 256" xml:space="preserve">
+  <style>
+	.initials {
+		font-family: "Libre Baskerville", serif;
+		font-size: 150px;
+		fill: black;
+		text-shadow: 0 0 4px white;
+	}
+
+	@media (prefers-color-scheme: dark) {
+      .initials {
+		fill: white;
+		text-shadow: 0 0 4px black;
+	  }
+    }
+  </style>
+	<text x="2" y="178" class="initials">DW</text>
+</svg>

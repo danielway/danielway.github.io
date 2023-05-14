@@ -1,6 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="25px" width="15px" version="1.1" id="cross" viewBox="0 0 15 25" xml:space="preserve">
-<g stroke="#000000">
-	<rect x="6" y="0" width="3" height="25"/>
-	<rect x="0" y="7" width="14" height="3"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" height="30px" width="20px" version="1.1" id="cross" viewBox="0 0 20 30" xml:space="preserve">
+	<style>
+	.rectangle {
+		fill: black;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.rectangle {
+			fill: white;
+		}
+	}
+	</style>
+	<g>
+		<rect x="8" y="0" width="4" height="30" class="rectangle" />
+		<rect x="0" y="8" width="20" height="4" class="rectangle" />
+	</g>
 </svg>

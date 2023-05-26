@@ -1,9 +1,5 @@
 ---
 layout: base.njk
-showInitials: true
-projectsActive: true
-title: micrograd-rs
-
 eleventyNavigation:
   key: micrograd-rs
   parent: Projects

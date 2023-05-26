@@ -1,9 +1,5 @@
 ---
 layout: base.njk
-showInitials: true
-contactActive: true
-title: Contact
-
 eleventyNavigation:
   key: Contact
   order: 4

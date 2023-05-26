@@ -1,9 +1,5 @@
 ---
 layout: base.njk
-showInitials: true
-projectsActive: true
-title: Task Timer
-
 eleventyNavigation:
   key: Task Timer
   parent: Projects

@@ -1,9 +1,5 @@
 ---
 layout: base.njk
-showInitials: true
-experienceActive: true
-title: Experience
-
 eleventyNavigation:
   key: Experience
   order: 3

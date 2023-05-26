@@ -1,1 +1,13 @@
 @import 'fonts.css';
+@import 'navigation.css';
+* {
+  font-family: Helvetica, Arial, sans-serif;
+  color: black;
+  background: white;
+}
+@media (prefers-color-scheme: dark) {
+  * {
+    color: white;
+    background: black;
+  }
+}

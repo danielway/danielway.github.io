@@ -3,6 +3,10 @@ layout: base.njk
 showInitials: true
 projectsActive: true
 title: NEXRAD
+
+eleventyNavigation:
+  key: git-cc
+  parent: Projects
 ---
 
 # git-cc

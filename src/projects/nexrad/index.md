@@ -3,6 +3,10 @@ layout: base.njk
 showInitials: true
 projectsActive: true
 title: NEXRAD
+
+eleventyNavigation:
+  key: NEXRAD
+  parent: Projects
 ---
 
 # NEXRAD Decoder

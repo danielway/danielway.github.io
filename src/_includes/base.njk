@@ -18,21 +18,12 @@
                     {{ "Daniel Way" if showInitials }}
                 </div>
                 <ul>
-                    <li {{ 'class=active' if aboutActive }}>
-                        <a href="/">About</a>
-                    </li>
-                    <li {{ 'class=active' if writingActive }}>
-                        <a href="/writing">Writing</a>
-                    </li>
-                    <li {{ 'class=active' if projectsActive }}>
-                        <a href="/projects">Projects</a>
-                    </li>
-                    <li {{ 'class=active' if experienceActive }}>
-                        <a href="/experience">Experience</a>
-                    </li>
-                    <li {{ 'class=active' if contactActive }}>
-                        <a href="/contact">Contact</a>
-                    </li>
+                    {% set navPages = collections.all | eleventyNavigation %}
+                    {%- for entry in navPages %}
+                        <li {% if entry.url == page.url %} class="my-active-class" {% endif %}>
+                            <a href="{{ entry.url }}">{{ entry.title }}</a>
+                        </li>
+                    {%- endfor %}
                     <li>
                         <img src="/images/cross.svg"/>
                     </li>

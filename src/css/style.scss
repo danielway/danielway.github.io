@@ -5,9 +5,32 @@
     font-family: Helvetica, Arial, sans-serif;
 
     color: black;
-    background: white;
+    background: #fefefe;
     @media (prefers-color-scheme: dark) {
         color: white;
         background: black;
+    }
+}
+
+html {
+    font-size: 18px;
+}
+
+body {
+    max-width: 768px;
+    padding: 0;
+    margin: auto;
+}
+
+article {
+    padding: 15px;
+}
+
+p {
+    line-height: 1.5;
+
+    color: #6c6c6c;
+    @media (prefers-color-scheme: dark) {
+        color: #b2b2b2;
     }
 }

@@ -1,0 +1,59 @@
+article.about {
+  padding: 0 15px;
+}
+article.about h1 {
+  margin: 0;
+  font-family: "Libre Baskerville", serif;
+  font-size: 2rem;
+}
+@media (min-width: 768px) {
+  article.about h1 {
+    font-size: 3rem;
+  }
+}
+article.about p.title {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #323232;
+}
+@media (prefers-color-scheme: dark) {
+  article.about p.title {
+    color: #dcdcdc;
+  }
+}
+article.about .photo {
+  float: right;
+  width: 100px;
+  height: 100px;
+  border-radius: 100px;
+  overflow: hidden;
+  margin-left: 20px;
+}
+article.about .photo img {
+  width: 100px;
+  position: relative;
+  top: -15px;
+}
+@media (max-width: 375px) {
+  article.about .photo {
+    display: none;
+  }
+}
+@media (min-width: 576px) {
+  article.about .photo {
+    width: 150px;
+    height: 150px;
+  }
+  article.about .photo img {
+    width: 150px;
+  }
+}
+@media (min-width: 768px) {
+  article.about .photo {
+    width: 200px;
+    height: 200px;
+  }
+  article.about .photo img {
+    width: 200px;
+  }
+}

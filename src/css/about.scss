@@ -59,3 +59,35 @@ article.about {
         }
     }
 }
+
+article.writing {
+    table {
+        width: 100%;
+        border-collapse: collapse;
+
+        tr {
+            border-bottom: 1px solid #ececec;
+
+            td {
+                font-size: 0.9rem;
+                padding: 10px 0;
+
+                a {
+                    text-decoration: none;
+
+                    &:hover {
+                        text-decoration: underline;
+                    }
+                }
+
+                &:first-child {
+                    margin-right: 20px;
+                }
+            }
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+}

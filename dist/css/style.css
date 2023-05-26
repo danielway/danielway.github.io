@@ -26,12 +26,12 @@ article {
   padding: 15px;
 }
 
-p {
+p, td {
   line-height: 1.5;
   color: #6c6c6c;
 }
 @media (prefers-color-scheme: dark) {
-  p {
+  p, td {
     color: #b2b2b2;
   }
 }

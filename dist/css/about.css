@@ -57,3 +57,27 @@ article.about .photo img {
     width: 200px;
   }
 }
+
+article.writing table {
+  width: 100%;
+  border-collapse: collapse;
+}
+article.writing table tr {
+  border-bottom: 1px solid #ececec;
+}
+article.writing table tr td {
+  font-size: 0.9rem;
+  padding: 10px 0;
+}
+article.writing table tr td a {
+  text-decoration: none;
+}
+article.writing table tr td a:hover {
+  text-decoration: underline;
+}
+article.writing table tr td:first-child {
+  margin-right: 20px;
+}
+article.writing table tr:last-child {
+  border-bottom: none;
+}

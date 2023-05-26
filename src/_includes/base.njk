@@ -3,12 +3,8 @@
     <head>
         <title>{{ title if title is string else 'Daniel Way' }}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
-        <link rel="stylesheet" href="/css/style.css"/>
-        {% if aboutActive %}<link rel="stylesheet" href="/css/about.css"/>{% endif %}
-        {% if writingActive %}<link rel="stylesheet" href="/css/writing.css"/>{% endif %}
-        {% if projectsActive %}<link rel="stylesheet" href="/css/projects.css"/>{% endif %}
-        {% if experienceActive %}<link rel="stylesheet" href="/css/experience.css"/>{% endif %}
-        {% if contactActive %}<link rel="stylesheet" href="/css/contact.css"/>{% endif %}
+        <link rel="stylesheet" href="/css/style.css"/> {% set urlSegments = page.url.split("/") %}
+        {% set pageSegment = urlSegments[1] if urlSegments.length > 2 else "about" %} <link rel="stylesheet" href="/css/{{ pageSegment }}.css"/>
         <link rel="icon" href="/images/favicon.svg">
     </head>
     <body>

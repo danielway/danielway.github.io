@@ -2,6 +2,7 @@
 layout: project.njk
 tags: projects
 
+date: 2023-05-14
 title: Task Timer
 image: /images/task_timer.png
 description: Simple task time tracking utility.

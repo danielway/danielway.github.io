@@ -2,6 +2,7 @@
 layout: project.njk
 tags: projects
 
+date: 2022-11-05
 title: git-cc
 image: /images/git-cc.png
 description:

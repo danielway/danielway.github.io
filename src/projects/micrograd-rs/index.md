@@ -2,6 +2,7 @@
 layout: project.njk
 tags: projects
 
+date: 2023-02-11
 title: micrograd-rs
 image: /images/micrograd-rs.png
 description: A Rust implementation of the micrograd

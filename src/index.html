@@ -48,7 +48,7 @@ eleventyNavigation:
   <h2>Projects</h2>
 
   <div class="cards">
-    {%- for project in collections.projects -%}
+    {%- for project in collections.projects reversed -%}
     <div>
       <div>
         <h3><a href="{{project.url}}">{{project.data.title}}</a></h3>

@@ -2,6 +2,7 @@
 layout: project.njk
 tags: projects
 
+date: 2023-04-16
 title: NEXRAD Decoder
 image: /images/nexrad_flat.png
 description: Weather radar decoder to be used for

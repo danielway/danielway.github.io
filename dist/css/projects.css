@@ -1,3 +1,16 @@
+article.projects h1 {
+  margin-bottom: 0.5rem;
+}
+article.projects .meta {
+  font-style: italic;
+  font-size: 0.8rem;
+  color: #acacac;
+}
+@media (prefers-color-scheme: dark) {
+  article.projects .meta {
+    color: #494949;
+  }
+}
 article.projects .cards .card {
   display: flex;
   overflow: hidden;
@@ -9,10 +22,16 @@ article.projects .cards .card {
     border-bottom: 1px solid #242424;
   }
 }
+article.projects .cards .card .date {
+  float: right;
+  font-size: 0.8rem;
+  font-style: italic;
+}
 article.projects .cards .card:last-child {
   border-bottom: none;
 }
 article.projects .cards .card > :first-child {
+  padding-right: 15px;
   width: 60%;
 }
 article.projects .cards .card > :first-child h3 {

@@ -1,8 +1,11 @@
 ---
 layout: base.njk
+
+date: git Last Modified
 ---
 
-<article>
+<article class="projects">
     <h1>{{ title | safe }}</h1>
+    <span class="meta">Updated: {{ page.date | postDate }}</span>
     {{ content | safe }}
 </article>

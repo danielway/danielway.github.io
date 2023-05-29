@@ -1,4 +1,18 @@
 article.projects {
+  h1 {
+    margin-bottom: 0.5rem;
+  }
+
+  .meta {
+    font-style: italic;
+    font-size: 0.8rem;
+
+    color: #acacac;
+    @media (prefers-color-scheme: dark) {
+      color: #494949;
+    }
+  }
+
   .cards {
     .card {
       display: flex;
@@ -10,11 +24,18 @@ article.projects {
         border-bottom: 1px solid #242424;
       }
 
+      .date {
+        float: right;
+        font-size: 0.8rem;
+        font-style: italic;
+      }
+
       &:last-child {
         border-bottom: none;
       }
 
       & > :first-child {
+        padding-right: 15px;
         width: 60%;
 
         h3 {

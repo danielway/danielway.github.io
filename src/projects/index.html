@@ -9,10 +9,13 @@ eleventyNavigation:
   <h2>Projects</h2>
 
   <div class="cards">
-    {%- for project in collections.projects -%}
+    {%- for project in collections.projects reversed -%}
     <div class="card">
       <div>
-        <h3><a href="{{project.url}}">{{project.data.title}}</a></h3>
+        <span class="date muted">Updated {{project.data.date | postDate}}</span>
+        <h3>
+          <a href="{{project.url}}">{{project.data.title}}</a>
+        </h3>
         <p class="muted">{{project.data.description}}</p>
       </div>
       <div>

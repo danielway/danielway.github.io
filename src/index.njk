@@ -7,17 +7,15 @@ eleventyNavigation:
 
 <article class="about">
   <div class="photo">
-    <img src="/images/profile_photo.jpeg" alt="Daniel Way" />
+    <img src="/images/profile_photo.jpeg" alt="Daniel Way"/>
   </div>
   <h1>Daniel Way</h1>
   <p class="title">Senior Software Engineer at Workiva</p>
   <p class="muted">
-    Life-long technologist with a passion for learning, teaching, and building.
-    Experienced as a full-stack software engineer working on a variety of
-    customer-facing and backend systems.
+    Life-long technologist with a passion for learning, teaching, and building. Experienced as a full-stack software
+    engineer working on a variety of customer-facing and backend systems.
   </p>
 </article>
-
 <article class="writing">
   <h2>Writing</h2>
   <table>
@@ -43,21 +41,22 @@ eleventyNavigation:
     </tbody>
   </table>
 </article>
-
 <article class="projects">
   <h2>Projects</h2>
-
   <div class="cards">
-    {%- for project in collections.projects reversed -%}
-    <div>
+    {% set projects = collections.projects | reverse | limit(4) %}
+    {%- for project in projects -%}
       <div>
-        <h3><a href="{{project.url}}">{{project.data.title}}</a></h3>
-        <p class="muted">{{project.data.description}}</p>
+        <div>
+          <h3>
+            <a href="{{ project.url }}">{{ project.data.title }}</a>
+          </h3>
+          <p class="muted">{{ project.data.description }}</p>
+        </div>
+        <div>
+          <img src="{{ project.data.image }}" alt="git-cc"/>
+        </div>
       </div>
-      <div>
-        <img src="{{project.data.image}}" alt="git-cc" />
-      </div>
-    </div>
     {%- endfor -%}
   </div>
 </article>

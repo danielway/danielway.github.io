@@ -80,6 +80,7 @@ article.writing table tr td {
   }
   article.writing table tr td:first-child {
     padding-bottom: 0;
+    font-size: 0.8rem;
   }
   article.writing table tr td:last-child {
     padding-top: 0;

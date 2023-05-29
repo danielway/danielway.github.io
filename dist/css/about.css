@@ -63,7 +63,12 @@ article.writing table {
   border-collapse: collapse;
 }
 article.writing table tr {
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid #d2d2d2;
+}
+@media (prefers-color-scheme: dark) {
+  article.writing table tr {
+    border-bottom: 1px solid #242424;
+  }
 }
 article.writing table tr td {
   font-size: 0.9rem;
@@ -80,4 +85,49 @@ article.writing table tr td:first-child {
 }
 article.writing table tr:last-child {
   border-bottom: none;
+}
+
+article.projects .cards {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 768px) {
+  article.projects .cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+article.projects .cards > div {
+  font-size: 0.8rem;
+  border-radius: 5px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #d2d2d2;
+  background-color: #fafafa;
+}
+@media (prefers-color-scheme: dark) {
+  article.projects .cards > div {
+    border: 1px solid #242424;
+    background-color: #131313;
+  }
+}
+article.projects .cards > div > :first-child {
+  width: 60%;
+  padding: 0.6rem;
+}
+article.projects .cards > div > :first-child h3 {
+  margin: 0;
+}
+article.projects .cards > div > :first-child h3 a {
+  text-decoration: none;
+}
+article.projects .cards > div > :last-child {
+  width: 40%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+article.projects .cards > div > :last-child > img {
+  min-width: 100%;
+  min-height: 100%;
+  object-fit: cover;
 }

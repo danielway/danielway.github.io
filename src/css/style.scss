@@ -3,23 +3,32 @@
 
 * {
     font-family: Helvetica, Arial, sans-serif;
-
-    color: black;
-    background: #fefefe;
-    @media (prefers-color-scheme: dark) {
-        color: white;
-        background: black;
-    }
 }
 
 html {
     font-size: 18px;
+
+    background: #fefefe;
+    @media (prefers-color-scheme: dark) {
+        background: black;
+    }
+}
+
+html, a {
+    color: black;
+    @media (prefers-color-scheme: dark) {
+        color: white;
+    }
 }
 
 body {
     max-width: 768px;
     padding: 0;
     margin: auto;
+}
+
+main {
+    padding: 25px 0;
 }
 
 article {

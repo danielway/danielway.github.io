@@ -66,8 +66,11 @@ article.writing {
         border-collapse: collapse;
 
         tr {
-            border-bottom: 1px solid #ececec;
-
+            border-bottom: 1px solid #d2d2d2;
+            @media (prefers-color-scheme: dark) {
+                border-bottom: 1px solid #242424;
+            }
+            
             td {
                 font-size: 0.9rem;
                 padding: 10px 0;
@@ -87,6 +90,57 @@ article.writing {
 
             &:last-child {
                 border-bottom: none;
+            }
+        }
+    }
+}
+
+article.projects {
+    .cards {
+        display: grid;
+        gap: 1rem;
+    
+        @media (min-width: 768px) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    
+        & > div {
+            font-size: 0.8rem;
+            border-radius: 5px;
+            display: flex;
+            overflow: hidden;
+
+            border: 1px solid #d2d2d2;
+            background-color: #fafafa;
+            @media (prefers-color-scheme: dark) {
+                border: 1px solid #242424;
+                background-color: #131313;
+            }
+            
+            & > :first-child {
+                width: 60%;
+                padding: 0.6rem;
+
+                h3 {
+                    margin: 0;
+
+                    a {
+                        text-decoration: none;
+                    }
+                }
+            }
+
+            & > :last-child {
+                width: 40%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                & > img { 
+                    min-width: 100%;
+                    min-height: 100%;
+                    object-fit: cover;
+                }
             }
         }
     }

@@ -1,11 +1,17 @@
 ---
-layout: base.njk
+layout: project.njk
+tags: projects
+
+title: git-cc
+image: /images/git-cc.png
+description:
+  CLI for composing <a href="http://conventionalcommits.org">conventional</a>
+  commit messages, including three tty libraries.
+
 eleventyNavigation:
   key: git-cc
   parent: Projects
 ---
-
-# git-cc
 
 CLI for composing Git commit messages that abide-by the
 <a href="http://conventionalcommits.org">conventional commits</a> specification.

@@ -1,11 +1,16 @@
 ---
-layout: base.njk
+layout: project.njk
+tags: projects
+
+title: micrograd-rs
+image: /images/micrograd-rs.png
+description: A Rust implementation of the micrograd
+  engine and neural networking library.
+
 eleventyNavigation:
   key: micrograd-rs
   parent: Projects
 ---
-
-# micrograd-rs
 
 This is a straightforward Rust implementation of Andrej Karpathy's scalar-valued
 autograd engine and neural networking library. This library intended more as

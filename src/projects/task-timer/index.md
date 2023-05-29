@@ -1,11 +1,15 @@
 ---
-layout: base.njk
+layout: project.njk
+tags: projects
+
+title: Task Timer
+image: /images/task_timer.png
+description: Simple task time tracking utility.
+
 eleventyNavigation:
   key: Task Timer
   parent: Projects
 ---
-
-# Task Timer
 
 Simple task time tracking utility borne out of a desire to track what I've worked on without too
 much granularity.

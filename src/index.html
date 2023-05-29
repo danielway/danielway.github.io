@@ -48,51 +48,16 @@ eleventyNavigation:
   <h2>Projects</h2>
 
   <div class="cards">
+    {%- for project in collections.projects -%}
     <div>
       <div>
-        <h3><a href="/projects/git-cc">git-cc</a></h3>
-        <p class="muted">
-          CLI for composing
-          <a href="http://conventionalcommits.org">conventional</a>
-          commit messages, including three tty libraries.
-        </p>
+        <h3><a href="{{project.url}}">{{project.data.title}}</a></h3>
+        <p class="muted">{{project.data.description}}</p>
       </div>
       <div>
-        <img src="/images/git-cc.png" alt="git-cc" />
+        <img src="{{project.data.image}}" alt="git-cc" />
       </div>
     </div>
-    <div>
-      <div>
-        <h3><a href="/projects/task-timer">Task Timer</a></h3>
-        <p class="muted">Simple task time tracking utility.</p>
-      </div>
-      <div>
-        <img src="/images/task_timer.png" alt="Task Timer" />
-      </div>
-    </div>
-    <div>
-      <div>
-        <h3><a href="/projects/nexrad">NEXRAD Decoder</a></h3>
-        <p class="muted">
-          Weather radar decoder to be used for volumetric rendering of
-          reflectivity/velocity data.
-        </p>
-      </div>
-      <div>
-        <img src="/images/nexrad_flat.png" alt="NEXRAD" />
-      </div>
-    </div>
-    <div>
-      <div>
-        <h3><a href="/projects/micrograd-rs/">micrograd-rs</a></h3>
-        <p class="muted">
-          A Rust implementation of the micrograd engine and neural networking
-          library.
-        </p>
-      </div>
-      <div>
-        <img src="/images/micrograd-rs.png" alt="micrograd-rs" />
-      </div>
-    </div>
+    {%- endfor -%}
   </div>
 </article>

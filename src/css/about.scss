@@ -75,6 +75,18 @@ article.writing {
                 font-size: 0.9rem;
                 padding: 10px 0;
 
+                @media (max-width: 576px) {
+                    display: block;
+
+                    &:first-child {
+                        padding-bottom: 0;
+                    }
+
+                    &:last-child {
+                        padding-top: 0;
+                    }
+                }
+
                 a {
                     text-decoration: none;
 

@@ -74,6 +74,17 @@ article.writing table tr td {
   font-size: 0.9rem;
   padding: 10px 0;
 }
+@media (max-width: 576px) {
+  article.writing table tr td {
+    display: block;
+  }
+  article.writing table tr td:first-child {
+    padding-bottom: 0;
+  }
+  article.writing table tr td:last-child {
+    padding-top: 0;
+  }
+}
 article.writing table tr td a {
   text-decoration: none;
 }

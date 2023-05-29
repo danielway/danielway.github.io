@@ -136,6 +136,9 @@ article.projects .cards > div > :first-child h3 {
 article.projects .cards > div > :first-child h3 a {
   text-decoration: none;
 }
+article.projects .cards > div > :first-child h3 a:hover {
+  text-decoration: underline;
+}
 article.projects .cards > div > :last-child {
   width: 40%;
   display: flex;

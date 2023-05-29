@@ -1,0 +1,47 @@
+article.projects {
+  .cards {
+    .card {
+      display: flex;
+      overflow: hidden;
+      padding: 1rem;
+
+      border-bottom: 1px solid #d2d2d2;
+      @media (prefers-color-scheme: dark) {
+        border-bottom: 1px solid #242424;
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      & > :first-child {
+        width: 60%;
+
+        h3 {
+          margin: 0;
+
+          a {
+            text-decoration: none;
+
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+
+      & > :last-child {
+        width: 40%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        & > img {
+          min-width: 100%;
+          min-height: 100%;
+          object-fit: cover;
+        }
+      }
+    }
+  }
+}

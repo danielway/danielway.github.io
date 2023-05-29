@@ -1,5 +1,5 @@
-@import 'fonts.css';
-@import 'navigation.css';
+@import "fonts.css";
+@import "navigation.css";
 * {
   font-family: Helvetica, Arial, sans-serif;
 }
@@ -14,35 +14,90 @@ html {
   }
 }
 
-html, a {
+html,
+a,
+p {
   color: black;
 }
 @media (prefers-color-scheme: dark) {
-  html, a {
+  html,
+  a,
+  p {
     color: white;
   }
 }
 
 body {
   max-width: 768px;
-  padding: 0;
+  padding: 15px;
   margin: auto;
 }
 
-main {
-  padding: 25px 0;
+header {
+  padding: 15px 0;
+  display: flex;
+  align-items: flex-start;
+}
+header nav {
+  flex: 1;
+  padding-top: 5px;
+}
+header .name,
+header .cross {
+  flex: 0 0 65px;
+}
+@media (min-width: 768px) {
+  header .name {
+    flex: 1;
+  }
+  header .cross {
+    flex: none;
+  }
+}
+header .name {
+  padding-top: 5px;
+  height: 35px;
+}
+header .name .full,
+header .name .initials {
+  font-size: 1.5rem;
+  font-family: "Libre Baskerville", serif;
+}
+header .name .full {
+  display: block;
+}
+header .name .initials {
+  display: none;
+}
+@media (max-width: 768px) {
+  header .name .full {
+    display: none;
+  }
+  header .name .initials {
+    display: block;
+  }
+}
+header .cross {
+  text-align: right;
+}
+header .cross img {
+  height: 0.9rem;
+  position: relative;
+  top: 9px;
 }
 
-article {
-  padding: 15px;
-}
-
-p, td {
+p,
+td {
   line-height: 1.5;
+}
+
+p.muted,
+td.muted {
   color: #6c6c6c;
 }
 @media (prefers-color-scheme: dark) {
-  p, td {
+  p.muted,
+  td.muted {
     color: #b2b2b2;
   }
 }

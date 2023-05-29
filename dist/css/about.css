@@ -1,5 +1,9 @@
+article {
+  margin-top: 30px;
+}
+
 article.about {
-  padding: 0 15px;
+  margin: 0;
 }
 article.about h1 {
   margin: 0;

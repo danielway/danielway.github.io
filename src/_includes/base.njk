@@ -9,6 +9,12 @@
     </head>
     <body>
         <header>
+            <div class="name">
+                {% if page.url != "/" %}
+                    <span class="full">Daniel Way</span>
+                    <span class="initials">DW</span>
+                {% endif %}
+            </div>
             <nav>
                 <ul>
                     {% set navPages = collections.all | eleventyNavigation %}
@@ -17,11 +23,11 @@
                             <a href="{{ entry.url }}">{{ entry.title }}</a>
                         </li>
                     {%- endfor %}
-                    <li>
-                        <img src="/images/cross.svg"/>
-                    </li>
                 </ul>
             </nav>
+            <div class="cross">
+                <img src="/images/cross.svg"/>
+            </div>
         </header>
         <main>
             {{ content | safe }}

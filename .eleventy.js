@@ -23,4 +23,8 @@ module.exports = function (eleventyConfig) {
   });
 
   eleventyConfig.addFilter("limit", (arr, limit) => arr.slice(0, limit));
+
+  eleventyConfig.addShortcode("formatISODate", (date) =>
+    DateTime.fromISO(date).toISODate()
+  );
 };

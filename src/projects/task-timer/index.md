@@ -1,15 +1,10 @@
 ---
 layout: project.njk
-tags: projects
-
-date: 2023-05-14
+createdDate: 2020-07-13
+updatedDate: 2023-05-14
 title: Task Timer
 image: /images/task_timer.png
 description: Simple task time tracking utility.
-
-eleventyNavigation:
-  key: Task Timer
-  parent: Projects
 ---
 
 Simple task time tracking utility borne out of a desire to track what I've worked on without too

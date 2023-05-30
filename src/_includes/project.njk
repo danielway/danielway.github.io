@@ -1,11 +1,18 @@
 ---
 layout: base.njk
+tags: projects
 
-date: git Last Modified
+createdDate: git Created
+updatedDate: git Last Modified
 ---
 
 <article class="projects">
     <h1>{{ title | safe }}</h1>
-    <span class="meta">Updated: {{ page.date | postDate }}</span>
+    <span class="meta">
+        {% if createdDate != updatedDate %}
+            Updated: {{ updatedDate | postDate }},
+        {% endif %}
+        Created: {{ createdDate | postDate }}
+    </span>
     {{ content | safe }}
 </article>

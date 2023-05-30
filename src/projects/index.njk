@@ -1,0 +1,29 @@
+---
+layout: base.njk
+eleventyNavigation:
+  key: Projects
+  order: 2
+---
+
+<article class="projects">
+  <h2>Projects</h2>
+  <div class="cards">
+    {% set projects = collections.projects  | reverse %}
+    {%- for project in projects -%}
+      <div class="card">
+        <div>
+          <span class="date muted">
+            Updated {{ project.data.updatedDate | postDate }}
+          </span>
+          <h3>
+            <a href="{{ project.url }}">{{ project.data.title }}</a>
+          </h3>
+          <p class="muted">{{ project.data.description | safe }}</p>
+        </div>
+        <div>
+          <img src="{{ project.data.image }}" alt="git-cc"/>
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+</article>

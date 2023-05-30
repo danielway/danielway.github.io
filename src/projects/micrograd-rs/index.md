@@ -1,16 +1,11 @@
 ---
 layout: project.njk
-tags: projects
-
-date: 2023-02-11
+createdDate: 2023-02-11
+updatedDate: 2023-02-11
 title: micrograd-rs
 image: /images/micrograd-rs.png
 description: A Rust implementation of the micrograd
   engine and neural networking library.
-
-eleventyNavigation:
-  key: micrograd-rs
-  parent: Projects
 ---
 
 This is a straightforward Rust implementation of Andrej Karpathy's scalar-valued

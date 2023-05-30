@@ -9,7 +9,7 @@ updatedDate: git Last Modified
 <article class="projects">
     <h1>{{ title | safe }}</h1>
     <span class="meta">
-        {% if createdDate != updatedDate %}
+        {% if updatedDate and createdDate != updatedDate %}
             Updated: {{ updatedDate | postDate }},
         {% endif %}
         Created: {{ createdDate | postDate }}

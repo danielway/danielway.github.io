@@ -1,22 +1,18 @@
 ---
 layout: base.njk
+tags: articles
 
 createdDate: git Created
 updatedDate: git Last Modified
 ---
 
-<article>
+<article class="writing">
     <h1>{{ title | safe }}</h1>
     <em>
-        Published {{ publishedDate }}. {{ 'Edited ' + editedDate + '.' if editedDate is string }}
+        Published {{ createdDate }}.
+        {% if updatedDate %}
+            Edited {{ updatedDate }}.
+        {% endif %}
     </em>
     {{ content | safe }}
-</article>
-<article>
-    <h2>Changelog</h2>
-    <ul>
-        <li>
-            <em>April 29, 2023 -</em>
-            Published.</li>
-    </ul>
 </article>

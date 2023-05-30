@@ -1,0 +1,24 @@
+---
+layout: base.njk
+showInitials: true
+writingActive: true
+title: Writing
+
+eleventyNavigation:
+  key: Writing
+  order: 1
+---
+
+<article class="writing">
+  <h1>Writing</h1>
+  {% set articles = collections.articles | reverse %}
+  {%- for article in articles -%}
+    <div class="article">
+      <span class="date">{{ article.data.createdDate | postDate }}</span>
+      <h3>
+        <a href="{{ article.url }}">{{ article.data.title }}</a>
+      </h3>
+      <p>{{ article.content | safe }}</p>
+    </div>
+  {%- endfor -%}
+</article>

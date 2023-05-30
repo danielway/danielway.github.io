@@ -51,7 +51,7 @@ eleventyNavigation:
           <h3>
             <a href="{{ project.url }}">{{ project.data.title }}</a>
           </h3>
-          <p class="muted">{{ project.data.description }}</p>
+          <p class="muted">{{ project.data.description | safe }}</p>
         </div>
         <div>
           <img src="{{ project.data.image }}" alt="git-cc"/>

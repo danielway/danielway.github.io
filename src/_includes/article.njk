@@ -8,11 +8,11 @@ updatedDate: git Last Modified
 
 <article class="writing">
     <h1>{{ title | safe }}</h1>
-    <em>
-        Published {{ createdDate }}.
+    <span class="meta muted">
+        Published {{ createdDate | postDate }}.
         {% if updatedDate %}
-            Edited {{ updatedDate }}.
+            Edited {{ updatedDate | postDate }}.
         {% endif %}
-    </em>
+    </span>
     {{ content | safe }}
 </article>

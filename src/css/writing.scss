@@ -1,11 +1,22 @@
 article.writing {
+  h1 {
+    margin-bottom: 0.2rem;
+  }
+
+  .meta {
+    font-size: 0.8rem;
+  }
+
+  p {
+    font-family: "Times New Roman", Times, serif;
+  }
+
   .article {
-    margin: 0 15px;
+    margin: 30px 15px;
 
     .date {
       float: right;
       font-size: 0.8rem;
-      font-style: italic;
     }
 
     h3 {

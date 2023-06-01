@@ -1,11 +1,27 @@
-// font-family: "Times New Roman", Times, serif;
-
 article.writing {
   .article {
+    margin: 0 15px;
+
     .date {
       float: right;
       font-size: 0.8rem;
       font-style: italic;
+    }
+
+    h3 {
+      margin: 0;
+
+      a {
+        text-decoration: none;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    p {
+      font-family: "Times New Roman", Times, serif;
     }
   }
 }

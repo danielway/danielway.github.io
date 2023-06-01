@@ -1,5 +1,20 @@
+article.writing .article {
+  margin: 0 15px;
+}
 article.writing .article .date {
   float: right;
   font-size: 0.8rem;
   font-style: italic;
+}
+article.writing .article h3 {
+  margin: 0;
+}
+article.writing .article h3 a {
+  text-decoration: none;
+}
+article.writing .article h3 a:hover {
+  text-decoration: underline;
+}
+article.writing .article p {
+  font-family: "Times New Roman", Times, serif;
 }

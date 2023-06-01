@@ -11,10 +11,10 @@ nav ul {
 nav ul li {
   display: inline-block;
   text-align: center;
-  margin: 5px 10px;
   font-size: 0.8rem;
 }
 nav ul li a {
+  padding: 5px 10px;
   text-decoration: none;
   color: #6d6d6d;
 }

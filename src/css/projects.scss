@@ -3,16 +3,6 @@ article.projects {
     margin-bottom: 0.5rem;
   }
 
-  .meta {
-    font-style: italic;
-    font-size: 0.8rem;
-
-    color: #acacac;
-    @media (prefers-color-scheme: dark) {
-      color: #494949;
-    }
-  }
-
   .cards {
     .card {
       display: flex;

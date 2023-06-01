@@ -1,16 +1,6 @@
 article.projects h1 {
   margin-bottom: 0.5rem;
 }
-article.projects .meta {
-  font-style: italic;
-  font-size: 0.8rem;
-  color: #acacac;
-}
-@media (prefers-color-scheme: dark) {
-  article.projects .meta {
-    color: #494949;
-  }
-}
 article.projects .cards .card {
   display: flex;
   overflow: hidden;

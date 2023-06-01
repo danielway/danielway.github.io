@@ -12,9 +12,6 @@ eleventyNavigation:
     {%- for project in projects -%}
       <div class="card">
         <div>
-          <span class="date muted">
-            Updated {{ project.data.updatedDate | postDate }}
-          </span>
           <h3>
             <a href="{{ project.url }}">{{ project.data.title }}</a>
           </h3>

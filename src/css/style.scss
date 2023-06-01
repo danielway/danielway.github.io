@@ -45,7 +45,7 @@ header {
     flex: 0 0 65px;
   }
 
-  @media (min-width: 768px) {
+  @media (min-width: 799px) {
     .name {
       flex: 1;
     }
@@ -73,7 +73,7 @@ header {
       display: none;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 798px) {
       .full {
         display: none;
       }

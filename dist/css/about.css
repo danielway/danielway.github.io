@@ -10,7 +10,7 @@ article.about h1 {
   font-family: "Libre Baskerville", serif;
   font-size: 2rem;
 }
-@media (min-width: 768px) {
+@media (min-width: 799px) {
   article.about h1 {
     font-size: 3rem;
   }
@@ -52,7 +52,7 @@ article.about .photo img {
     width: 150px;
   }
 }
-@media (min-width: 768px) {
+@media (min-width: 799px) {
   article.about .photo {
     width: 200px;
     height: 200px;
@@ -107,7 +107,7 @@ article.projects .cards {
   display: grid;
   gap: 1rem;
 }
-@media (min-width: 768px) {
+@media (min-width: 799px) {
   article.projects .cards {
     grid-template-columns: repeat(2, 1fr);
   }

@@ -46,7 +46,7 @@ header .name,
 header .cross {
   flex: 0 0 65px;
 }
-@media (min-width: 768px) {
+@media (min-width: 799px) {
   header .name {
     flex: 1;
   }
@@ -69,7 +69,7 @@ header .name .full {
 header .name .initials {
   display: none;
 }
-@media (max-width: 768px) {
+@media (max-width: 798px) {
   header .name .full {
     display: none;
   }

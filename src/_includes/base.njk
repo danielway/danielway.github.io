@@ -8,7 +8,7 @@
         <link rel="icon" href="/images/favicon.svg">
     </head>
     <body>
-        <header>
+        <header class="{{ "about" if page.url == "/" }}">
             <div class="name">
                 {% if page.url != "/" %}
                     <span class="full">Daniel Way</span>

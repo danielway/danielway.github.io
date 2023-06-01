@@ -44,7 +44,11 @@ header nav {
 }
 header .name,
 header .cross {
-  flex: 0 0 65px;
+  flex: 0 0 55px;
+}
+header.about .name,
+header.about .cross {
+  flex: 0 0 12px;
 }
 @media (min-width: 799px) {
   header .name {

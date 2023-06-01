@@ -5,6 +5,7 @@ updatedDate: 2023-05-14
 title: Task Timer
 image: /images/task_timer.png
 description: Simple task time tracking utility.
+githubRepo: danielway/task-timer
 ---
 
 Simple task time tracking utility borne out of a desire to track what I've worked on without too

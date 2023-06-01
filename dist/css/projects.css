@@ -1,8 +1,29 @@
-article.projects h1 {
+article.projects .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+article.projects .header h1 {
   margin-bottom: 0.2rem;
 }
-article.projects .meta {
+article.projects .header .meta {
   font-size: 0.8rem;
+}
+article.projects .header .icons > a > img {
+  height: 1.5rem;
+}
+@media (prefers-color-scheme: dark) {
+  article.projects .header .icons > a > img.light {
+    display: none;
+  }
+}
+article.projects .header .icons > a > img.dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  article.projects .header .icons > a > img.dark {
+    display: inline-block;
+  }
 }
 article.projects .cards .card {
   display: flex;

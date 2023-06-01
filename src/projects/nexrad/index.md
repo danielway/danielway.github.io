@@ -6,6 +6,7 @@ title: NEXRAD Decoder
 image: /images/nexrad_flat.png
 description: Weather radar decoder to be used for
   volumetric rendering of reflectivity/velocity data.
+githubRepo: danielway/nexrad
 ---
 
 Decoder for the WSR-88D's Radar Data Acquisition system's Level II weather data

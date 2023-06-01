@@ -6,6 +6,7 @@ title: micrograd-rs
 image: /images/micrograd-rs.png
 description: A Rust implementation of the micrograd
   engine and neural networking library.
+githubRepo: danielway/micrograd-rs
 ---
 
 This is a straightforward Rust implementation of Andrej Karpathy's scalar-valued

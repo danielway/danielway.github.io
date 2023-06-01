@@ -7,12 +7,22 @@ updatedDate: git Last Modified
 ---
 
 <article class="projects">
-    <h1>{{ title | safe }}</h1>
-    <span class="meta muted">
-        {% if updatedDate and createdDate != updatedDate %}
-            Updated: {{ updatedDate | postDate }},
-        {% endif %}
-        Created: {{ createdDate | postDate }}
-    </span>
+    <div class="header">
+        <div>
+            <h1>{{ title | safe }}</h1>
+            <span class="meta muted">
+                {% if updatedDate and createdDate != updatedDate %}
+                    Updated: {{ updatedDate | postDate }},
+                {% endif %}
+                Created: {{ createdDate | postDate }}
+            </span>
+        </div>
+        <div class="icons">
+            <a href="https://github.com/{{githubRepo}}">
+                <img class="light" src="/images/github.svg"/>
+                <img class="dark" src="/images/github-white.svg"/>
+            </a>
+        </div>
+    </div>
     {{ content | safe }}
 </article>

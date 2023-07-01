@@ -3,12 +3,6 @@
 	.rectangle {
 		fill: black;
 	}
-
-	@media (prefers-color-scheme: dark) {
-		.rectangle {
-			fill: white;
-		}
-	}
 	</style>
 	<g>
 		<rect x="8" y="0" width="4" height="30" class="rectangle" />

@@ -117,6 +117,20 @@ header {
 
       position: relative;
       top: 4px;
+
+
+      &.light {
+        @media (prefers-color-scheme: dark) {
+          display: none;
+        }
+      }
+
+      &.dark {
+        display: none;
+        @media (prefers-color-scheme: dark) {
+          display: inline-block;
+        }
+      }
     }
   }
 }

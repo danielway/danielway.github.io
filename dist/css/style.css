@@ -107,6 +107,19 @@ header .cross img {
   position: relative;
   top: 4px;
 }
+@media (prefers-color-scheme: dark) {
+  header .cross img.light {
+    display: none;
+  }
+}
+header .cross img.dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  header .cross img.dark {
+    display: inline-block;
+  }
+}
 
 p,
 td {

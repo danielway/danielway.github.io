@@ -33,23 +33,12 @@ header {
   padding: 15px 0;
 
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
 
   nav {
     flex: 1;
     padding-top: 5px;
-  }
-
-  .name,
-  .cross {
-    flex: 0 0 55px;
-  }
-
-  &.about {
-    .name,
-    .cross {
-      flex: 0 0 12px;
-    }
   }
 
   @media (min-width: 799px) {
@@ -59,6 +48,25 @@ header {
 
     .cross {
       flex: none;
+    }
+  }
+
+  @media (max-width: 500px) {
+    padding: 0;
+
+    .name {
+      width: 50%;
+    }
+
+    .cross {
+      width: 50%;
+    }
+
+    nav {
+      flex: none;
+      width: 100%;
+      order: 3;
+      padding-bottom: 1rem;
     }
   }
 

@@ -36,19 +36,12 @@ body {
 header {
   padding: 15px 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
 }
 header nav {
   flex: 1;
   padding-top: 5px;
-}
-header .name,
-header .cross {
-  flex: 0 0 55px;
-}
-header.about .name,
-header.about .cross {
-  flex: 0 0 12px;
 }
 @media (min-width: 799px) {
   header .name {
@@ -56,6 +49,23 @@ header.about .cross {
   }
   header .cross {
     flex: none;
+  }
+}
+@media (max-width: 500px) {
+  header {
+    padding: 0;
+  }
+  header .name {
+    width: 50%;
+  }
+  header .cross {
+    width: 50%;
+  }
+  header nav {
+    flex: none;
+    width: 100%;
+    order: 3;
+    padding-bottom: 1rem;
   }
 }
 header .name {

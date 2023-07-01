@@ -37,11 +37,15 @@ header {
   padding: 15px 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
 }
 header nav {
   flex: 1;
   padding-top: 5px;
+}
+header .name,
+header .cross {
+  flex: 0 0 55px;
 }
 @media (min-width: 799px) {
   header .name {
@@ -54,6 +58,10 @@ header nav {
 @media (max-width: 500px) {
   header {
     padding: 0;
+  }
+  header .name,
+  header .cross {
+    flex: auto;
   }
   header .name {
     width: 50%;
@@ -97,7 +105,7 @@ header .cross {
 header .cross img {
   height: 0.9rem;
   position: relative;
-  top: 9px;
+  top: 4px;
 }
 
 p,

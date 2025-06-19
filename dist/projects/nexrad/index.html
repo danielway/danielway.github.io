@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>NEXRAD Decoder</title>
+        <title>NEXRAD</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
         <link rel="preload" href="/css/fonts.css"/>
         <link rel="stylesheet" href="/css/style.css"/> 
@@ -44,10 +44,10 @@
 <article class="projects">
     <div class="header">
         <div>
-            <h1>NEXRAD Decoder</h1>
+            <h1>NEXRAD</h1>
             <span class="meta muted">
                 
-                    Updated: Apr 16, 2023,
+                    Updated: Jun 19, 2025,
                 
                 Created: Apr 16, 2023
             </span>
@@ -59,11 +59,39 @@
             </a>
         </div>
     </div>
-    <p>Decoder for the WSR-88D's Radar Data Acquisition system's Level II weather data
-written in Rust. This decoder will allow me to decompress and decode radar data
-to be cached for fast access when generating volumetric renders.</p>
-<p><a href="https://github.com/danielway/nexrad">GitHub Repository</a></p>
-<img src="/images/nexrad_flat.png" alt="NEXRAD" width="500px" />
+    <p>The NEXRAD crate is a modern Rust toolkit designed to make working with weather radar data accessible, efficient, and reliable. By abstracting away the complexities of the NOAA Archive II format, this project aims to make it easier for developers, researchers, and enthusiasts to work with high-resolution atmospheric data.</p>
+<img src="/images/nexrad_flat.png" alt="NEXRAD" width="300" />
+<h2>Overview</h2>
+<p>The United States' NEXRAD network of Doppler weather radars generates detailed, real-time data on precipitation, wind, and storm structure. However, the raw data—encoded in the NOAA Archive II format—is notoriously difficult to work with due to its binary structure, compression layers, and domain-specific encoding.</p>
+<p>The NEXRAD crates attempt to bridge this gap by providing:</p>
+<ul>
+<li>Robust decoding and validation of radar messages</li>
+<li>Decompression (bzip2) and binary parsing compliant with WSR-88D ICD specifications</li>
+<li>Support for key radar products (reflectivity, velocity, spectrum width, and more)</li>
+<li>Accurate coordinate transformations and data scaling</li>
+<li>Clean, ergonomic APIs for easy integration into Rust applications</li>
+</ul>
+<h2>Architecture</h2>
+<p>The toolkit is organized as a monorepo, with each crate focused on a specific aspect of radar data processing:</p>
+<ul>
+<li><strong>nexrad-model</strong>: Core data structures and shared representations</li>
+<li><strong>nexrad-decode</strong>: Binary parsing and decompression logic</li>
+<li><strong>nexrad-data</strong>: Data access, downloading, and caching</li>
+<li><strong>nexrad-render</strong>: Visualization tools for transforming and rendering radar data</li>
+</ul>
+<p>This modular approach ensures flexibility—use only what you need, or combine crates for a full-featured solution.</p>
+<h2>Why this project?</h2>
+<p>This project began as a foundation for volumetric storm visualizations, but quickly evolved to address broader challenges in the Rust ecosystem: performance, usability, and extensibility. NEXRAD aims to serve a wide range of applications, from educational tools to advanced research and real-time visualization.</p>
+<h2>Roadmap</h2>
+<p>Future enhancements may include:</p>
+<ul>
+<li><strong>Advanced Rendering</strong>: Higher-performance, visually rich radar visualizations</li>
+<li><strong>NEXRAD Workbench</strong>: An interactive, browser-based platform for real-time data exploration and analysis</li>
+<li><strong>Machine Learning Integration</strong>: Foundational algorithms for tornado detection and radar signature analysis</li>
+</ul>
+<p>The ultimate goal is to deliver a comprehensive platform where users can explore, analyze, and visualize live weather radar data—without wrestling with low-level details.</p>
+<hr>
+<p>Interested in contributing or learning more? <a href="https://github.com/danielway/nexrad">Explore the code on GitHub</a>, open an issue, or reach out with your ideas and feedback!</p>
 
 </article>
         </main>

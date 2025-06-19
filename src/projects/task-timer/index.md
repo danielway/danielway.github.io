@@ -12,6 +12,6 @@ Simple task time tracking utility borne out of a desire to track what I've worke
 much granularity.
 
 [GitHub Repository](https://github.com/danielway/task-timer)
-[Live App](https://tasktimer.danieldway.com/)
+[Live App](https://www.danieldway.com/task-timer)
 
 <img src="/images/task_timer.png" alt="Task Timer" width="500px" />

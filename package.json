@@ -1,13 +1,20 @@
 {
+  "name": "danielway-github-io",
+  "version": "1.0.0",
+  "private": true,
   "main": "index.js",
   "scripts": {
     "start": "npx @11ty/eleventy --input=src --output=dist --serve",
-    "build": "rm -r dist; npx @11ty/eleventy --input=src --output=dist"
+    "build": "rm -rf dist; npx @11ty/eleventy --input=src --output=dist"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=20.19"
+  },
   "devDependencies": {
-    "@11ty/eleventy": "^2.0.1",
-    "@11ty/eleventy-navigation": "^0.3.5",
-    "sass": "^1.62.1"
+    "@11ty/eleventy": "^3.1.5",
+    "@11ty/eleventy-navigation": "^1.0.5",
+    "luxon": "^3.4.4",
+    "sass": "^1.100.0"
   }
 }

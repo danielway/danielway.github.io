@@ -1,0 +1,52 @@
+---
+layout: base.njk
+tags: doodles
+---
+
+<article class="projects doodle">
+    <div class="header">
+        <div>
+            <h1>{{ title | safe }}</h1>
+            <span class="meta muted">
+                Created: {{ createdDate | postDate }}
+                {% if model %} · {{ model }}{% endif %}
+                {% if tool %} · {{ tool }}{% endif %}
+            </span>
+        </div>
+        <div class="links">
+            <a href="{{ appFile }}" target="_blank" rel="noopener">Open full screen ↗</a>
+            <a href="https://github.com/danielway/danielway.github.io/blob/master{{ appFile }}" target="_blank" rel="noopener">View source ↗</a>
+        </div>
+    </div>
+
+    <div class="doodle-embed">
+        <iframe
+            src="{{ appFile }}"
+            title="{{ title }}"
+            loading="lazy"
+            style="height: {{ height or '480px' }};"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+    </div>
+
+    {% if prompts and prompts.length %}
+        <details class="prompt">
+            <summary>
+                <span class="label">{{ "Prompts" if prompts.length > 1 else "Prompt" }}</span>
+                {% if tool %}<span class="badge">{{ tool }}</span>{% endif %}
+                {% if model %}<span class="badge">{{ model }}</span>{% endif %}
+                <span class="preview">{{ prompts[0] }}</span>
+            </summary>
+            <div class="bubbles">
+                {%- for p in prompts -%}
+                    <p class="bubble">{{ p }}</p>
+                {%- endfor -%}
+            </div>
+        </details>
+    {% endif %}
+
+    {% if content %}
+        <div class="commentary">
+            {{ content | safe }}
+        </div>
+    {% endif %}
+</article>

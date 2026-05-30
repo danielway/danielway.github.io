@@ -2,6 +2,7 @@
 layout: base.njk
 tags: doodles
 ---
+{% import "icons.njk" as icons %}
 
 <article class="projects doodle">
     <div class="header">
@@ -13,9 +14,9 @@ tags: doodles
                 {% if tool %} · {{ tool }}{% endif %}
             </span>
         </div>
-        <div class="links">
-            <a href="{{ appFile }}" target="_blank" rel="noopener">Open full screen ↗</a>
-            <a href="https://github.com/danielway/danielway.github.io/blob/master{{ appFile }}" target="_blank" rel="noopener">View source ↗</a>
+        <div class="icons">
+            <a class="icon-btn" href="{{ appFile }}" target="_blank" rel="noopener" aria-label="Launch {{ title }} full screen">{{ icons.icon("play") }}</a>
+            <a class="icon-btn" href="https://github.com/danielway/danielway.github.io/blob/master{{ appFile }}" target="_blank" rel="noopener" aria-label="View {{ title }} source on GitHub">{{ icons.icon("github") }}</a>
         </div>
     </div>
 

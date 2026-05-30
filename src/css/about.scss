@@ -9,21 +9,13 @@ article.about {
     margin: 0;
 
     font-family: "Libre Baskerville", serif;
-    font-size: 2rem;
-
-    @media (min-width: 799px) {
-      font-size: 3rem;
-    }
+    font-size: clamp(2rem, 1.3rem + 3.1vw, 3rem);
   }
 
   p.title {
     font-size: 1.1rem;
     margin: 0;
-
-    color: #323232;
-    @media (prefers-color-scheme: dark) {
-      color: #dcdcdc;
-    }
+    color: var(--subtle);
   }
 
   .photo {
@@ -70,10 +62,7 @@ article.writing {
     border-collapse: collapse;
 
     tr {
-      border-bottom: 1px solid #d2d2d2;
-      @media (prefers-color-scheme: dark) {
-        border-bottom: 1px solid #242424;
-      }
+      border-bottom: 1px solid var(--border);
 
       td {
         font-size: 0.9rem;
@@ -112,7 +101,19 @@ article.writing {
   }
 }
 
+// Home page: projects shown as boxed cards in a two-column grid. The card flex
+// layout and thumbnail sizing are shared (see style.scss); this only adds the
+// grid and the boxed chrome.
 article.projects {
+  h2 a {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
   .cards {
     display: grid;
     gap: 1rem;
@@ -120,49 +121,25 @@ article.projects {
     @media (min-width: 799px) {
       grid-template-columns: repeat(2, 1fr);
     }
+  }
 
-    & > div {
-      font-size: 0.8rem;
-      border-radius: 5px;
-      display: flex;
-      overflow: hidden;
+  .card {
+    font-size: 0.8rem;
+    border-radius: 5px;
+    overflow: hidden;
 
-      border: 1px solid #d2d2d2;
-      background-color: #fafafa;
-      @media (prefers-color-scheme: dark) {
-        border: 1px solid #242424;
-        background-color: #131313;
-      }
+    border: 1px solid var(--border);
+    background-color: var(--card-bg);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 
-      & > :first-child {
-        width: 60%;
-        padding: 0.6rem;
+    &:hover {
+      border-color: var(--rule);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      transform: translateY(-1px);
+    }
 
-        h3 {
-          margin: 0;
-
-          a {
-            text-decoration: none;
-
-            &:hover {
-              text-decoration: underline;
-            }
-          }
-        }
-      }
-
-      & > :last-child {
-        width: 40%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        & > img {
-          min-width: 100%;
-          min-height: 100%;
-          object-fit: cover;
-        }
-      }
+    .card-body {
+      padding: 0.6rem;
     }
   }
 }

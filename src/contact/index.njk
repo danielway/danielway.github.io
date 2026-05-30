@@ -1,0 +1,43 @@
+---
+layout: base.njk
+eleventyNavigation:
+  key: Contact
+  order: 4
+---
+{% import "icons.njk" as icons %}
+
+<article class="contact">
+  <h1>Contact</h1>
+  <p class="muted">Find me around the web.</p>
+
+  <ul class="contact-list">
+    <li>
+      <a href="https://github.com/danielway" target="_blank" rel="noopener">
+        {{ icons.icon("github") }}
+        <span class="label">GitHub</span>
+        <span class="value">@danielway</span>
+      </a>
+    </li>
+    <li>
+      <a href="https://www.linkedin.com/in/daniel-way-693868171" target="_blank" rel="noopener">
+        {{ icons.icon("linkedin") }}
+        <span class="label">LinkedIn</span>
+        <span class="value">Daniel Way</span>
+      </a>
+    </li>
+    <li>
+      <a href="mailto:contact@danieldway.com">
+        {{ icons.icon("email") }}
+        <span class="label">Email</span>
+        <span class="value">contact@danieldway.com</span>
+      </a>
+    </li>
+    <li>
+      <a href="/assets/A56BB72EA65C7B37.asc">
+        {{ icons.icon("key") }}
+        <span class="label">PGP key</span>
+        <span class="value">A56BB72EA65C7B37</span>
+      </a>
+    </li>
+  </ul>
+</article>

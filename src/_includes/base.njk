@@ -1,13 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>{{ eleventyNavigation.key if page.url != "/" else 'Daniel Way' }}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1"/>
-        <link rel="preload" href="/css/fonts.css"/>
+        <meta charset="utf-8"/>
+        {% set pageTitle = title or eleventyNavigation.key %}
+        {% set pageDescription = (description or metadata.description) | striptags | trim %}
+        {% set pageImage = metadata.url + (image or metadata.defaultImage) %}
+        {% set pageUrl = metadata.url + page.url %}
+        <title>{% if page.url == "/" %}{{ metadata.title }}{% else %}{{ pageTitle }} · {{ metadata.title }}{% endif %}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta name="description" content="{{ pageDescription }}"/>
+        <meta name="author" content="{{ metadata.author }}"/>
+        <link rel="canonical" href="{{ pageUrl }}"/>
+
+        <meta property="og:type" content="{{ 'website' if page.url == '/' else 'article' }}"/>
+        <meta property="og:site_name" content="{{ metadata.title }}"/>
+        <meta property="og:title" content="{% if page.url == '/' %}{{ metadata.title }}{% else %}{{ pageTitle }}{% endif %}"/>
+        <meta property="og:description" content="{{ pageDescription }}"/>
+        <meta property="og:url" content="{{ pageUrl }}"/>
+        <meta property="og:image" content="{{ pageImage }}"/>
+
+        <meta name="twitter:card" content="summary_large_image"/>
+        <meta name="twitter:title" content="{% if page.url == '/' %}{{ metadata.title }}{% else %}{{ pageTitle }}{% endif %}"/>
+        <meta name="twitter:description" content="{{ pageDescription }}"/>
+        <meta name="twitter:image" content="{{ pageImage }}"/>
+
+        <meta name="theme-color" content="#fefefe" media="(prefers-color-scheme: light)"/>
+        <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)"/>
+
+        <link rel="preload" href="/fonts/librebaskerville/LibreBaskerville-Regular-Latin.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="stylesheet" href="/css/fonts.css"/>
         <link rel="stylesheet" href="/css/style.css"/> {% set urlSegments = page.url.split("/") %}
         {% set pageSegment = urlSegments[1] if urlSegments.length > 2 else "about" %} <link rel="stylesheet" href="/css/{{ pageSegment }}.css"/>
         <link rel="icon" href="/images/favicon.ico" sizes="any">
         <link rel="icon" href="/images/favicon.svg" type="svg+xml">
+        {% if page.url == "/" %}
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Person",
+            "name": "{{ metadata.author }}",
+            "url": "{{ metadata.url }}",
+            "image": "{{ metadata.url }}{{ metadata.defaultImage }}",
+            "jobTitle": "Staff Software Engineer",
+            "worksFor": { "@type": "Organization", "name": "Workiva" },
+            "sameAs": [
+                "https://github.com/danielway",
+                "https://www.linkedin.com/in/daniel-way-693868171"
+            ]
+        }
+        </script>
+        {% endif %}
     </head>
     <body>
         <header class="{{ "about" if page.url == "/" }}">
@@ -17,7 +59,7 @@
                     <span class="initials">DW</span>
                 {% endif %}
             </div>
-            <nav>
+            <nav aria-label="Primary">
                 <ul>
                     {% set navPages = collections.all | eleventyNavigation %}
                     {%- for entry in navPages %}
@@ -28,12 +70,20 @@
                 </ul>
             </nav>
             <div class="cross">
-                <img class="light" src="/images/cross.svg"/>
-                <img class="dark" src="/images/cross-white.svg"/>
+                <img class="light" src="/images/cross.svg" alt="" aria-hidden="true"/>
+                <img class="dark" src="/images/cross-white.svg" alt="" aria-hidden="true"/>
             </div>
         </header>
         <main>
             {{ content | safe }}
         </main>
+        <footer>
+            <nav aria-label="Social and contact">
+                <a href="https://github.com/danielway">GitHub</a>
+                <a href="https://www.linkedin.com/in/daniel-way-693868171">LinkedIn</a>
+                <a href="mailto:contact@danieldway.com">Email</a>
+            </nav>
+            <p class="muted">© {{ metadata.author }}</p>
+        </footer>
     </body>
 </html>

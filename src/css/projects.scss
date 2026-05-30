@@ -3,6 +3,7 @@ article.projects {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
 
     h1 {
       margin-bottom: 0.2rem;
@@ -12,108 +13,49 @@ article.projects {
       font-size: 0.8rem;
     }
 
-    .icons > a > img {
-      height: 1.5rem;
-
-      &.light {
-        @media (prefers-color-scheme: dark) {
-          display: none;
-        }
-      }
-
-      &.dark {
-        display: none;
-        @media (prefers-color-scheme: dark) {
-          display: inline-block;
-        }
-      }
+    // Standardized action buttons (GitHub, launch). Icons are inline SVG that
+    // inherit color; the .icon / .icon-btn styles live in style.scss.
+    .icons {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex: none;
     }
   }
 
+  // Projects list (and doodles gallery): cards as a bordered vertical list. The
+  // card flex layout and thumbnail box are shared from style.scss; this adds the
+  // list chrome and spacing.
   .cards {
     .card {
-      display: flex;
-      overflow: hidden;
       padding: 1rem;
+      gap: 1rem;
+      border-radius: 5px;
+      border-bottom: 1px solid var(--border);
+      transition: background-color 0.15s ease;
 
-      border-bottom: 1px solid #d2d2d2;
-      @media (prefers-color-scheme: dark) {
-        border-bottom: 1px solid #242424;
-      }
-
-      .date {
-        float: right;
-        font-size: 0.8rem;
-        font-style: italic;
+      &:hover {
+        background-color: var(--card-bg);
       }
 
       &:last-child {
         border-bottom: none;
       }
 
-      & > :first-child {
-        padding-right: 15px;
-        width: 60%;
-
-        h3 {
-          margin: 0;
-
-          a {
-            text-decoration: none;
-
-            &:hover {
-              text-decoration: underline;
-            }
-          }
-        }
-      }
-
-      & > :last-child {
-        width: 40%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        & > img {
-          min-width: 100%;
-          min-height: 100%;
-          object-fit: cover;
-        }
+      // Fixed-aspect thumbnail so list rows stay uniform regardless of text
+      // length (overrides the fill-height default from style.scss).
+      .thumb {
+        align-self: flex-start;
+        aspect-ratio: 16 / 10;
+        border-radius: 5px;
       }
     }
   }
-}
 
-article.projects {
   .doodle-tags {
     margin: 0.3rem 0 0;
     font-size: 0.75rem;
     font-style: italic;
-  }
-
-  // The single "Doodles" entry in the projects list — a collection masquerading
-  // as one item, so its thumbnail is a little mosaic of the doodles within.
-  .card.doodles-card {
-    .doodle-thumbs {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 3px;
-      align-self: stretch;
-
-      img {
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        aspect-ratio: 16 / 10;
-        object-fit: cover;
-        border-radius: 3px;
-      }
-
-      // Drop the odd one out so the grid stays tidy.
-      img:nth-child(n + 5) {
-        display: none;
-      }
-    }
   }
 }
 
@@ -126,51 +68,27 @@ article.projects.doodles-gallery {
 }
 
 article.projects.doodle {
-  .header .links {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.2rem;
-    white-space: nowrap;
-
-    a {
-      font-size: 0.8rem;
-    }
-  }
-
   .doodle-embed {
     margin: 1.2rem 0;
 
     iframe {
       width: 100%;
-      border: 1px solid #d2d2d2;
+      border: 1px solid var(--border);
       border-radius: 8px;
       background: #000;
-
-      @media (prefers-color-scheme: dark) {
-        border: 1px solid #242424;
-      }
     }
   }
 
   details.prompt {
-    border: 1px solid #d2d2d2;
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
-
-    @media (prefers-color-scheme: dark) {
-      border: 1px solid #242424;
-    }
 
     summary {
       cursor: pointer;
       padding: 0.7rem 0.9rem;
       list-style-position: inside;
-      background: #f5f5f5;
-
-      @media (prefers-color-scheme: dark) {
-        background: #161616;
-      }
+      background: var(--surface);
 
       .label {
         font-weight: bold;
@@ -200,11 +118,7 @@ article.projects.doodle {
       padding: 0.1rem 0.45rem;
       border-radius: 999px;
       font-size: 0.7rem;
-      background: #e4e4e4;
-
-      @media (prefers-color-scheme: dark) {
-        background: #2a2a2a;
-      }
+      background: var(--badge-bg);
     }
 
     .bubbles {
@@ -214,17 +128,12 @@ article.projects.doodle {
         margin: 0.6rem 0 0;
         padding: 0.7rem 0.9rem;
         border-radius: 8px;
-        border-left: 3px solid #b9b9b9;
-        background: #fafafa;
+        border-left: 3px solid var(--rule);
+        background: var(--code-bg);
         font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
         font-size: 0.85rem;
         line-height: 1.5;
         white-space: pre-wrap;
-
-        @media (prefers-color-scheme: dark) {
-          border-left: 3px solid #3a3a3a;
-          background: #121212;
-        }
       }
     }
   }

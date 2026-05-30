@@ -22,7 +22,7 @@ title: Doodles
     {% set doodles = collections.doodles | reverse %}
     {%- for doodle in doodles -%}
       <div class="card">
-        <div>
+        <div class="card-body">
           <h3>
             <a href="{{ doodle.url }}">{{ doodle.data.title }}</a>
           </h3>
@@ -31,8 +31,8 @@ title: Doodles
             {{ doodle.data.tool }}{% if doodle.data.model %} · {{ doodle.data.model }}{% endif %}
           </p>
         </div>
-        <div>
-          <img src="{{ doodle.data.image }}" alt="{{ doodle.data.title }}"/>
+        <div class="thumb">
+          <img src="{{ doodle.data.image }}" alt="{{ doodle.data.title }}" loading="lazy"/>
         </div>
       </div>
     {%- endfor -%}

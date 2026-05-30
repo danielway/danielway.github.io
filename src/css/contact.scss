@@ -1,0 +1,48 @@
+article.contact {
+  h1 {
+    margin-bottom: 0.2rem;
+  }
+
+  .contact-list {
+    list-style: none;
+    margin: 1.4rem 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    li a {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card-bg);
+      text-decoration: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+
+      &:hover {
+        border-color: var(--rule);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+      }
+    }
+
+    .icon {
+      flex: none;
+      color: var(--muted);
+    }
+
+    .label {
+      font-weight: bold;
+    }
+
+    .value {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: right;
+    }
+  }
+}

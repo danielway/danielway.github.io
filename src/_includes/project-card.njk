@@ -1,0 +1,29 @@
+{# Shared project-card renderer used by both the home page and the projects list,
+   so the two stay in lockstep on ordering and markup. Iterate
+   `collections.projectsOrdered` (sorted by the explicit `order` field) and call
+   projectCard(item, collections.doodles) for each. The Doodles entry is a
+   collection masquerading as one project, so it renders a 2x2 mosaic of its
+   members instead of a single screenshot. #}
+{% macro projectCard(item, doodles) -%}
+{%- if item.url == "/projects/doodles/" -%}
+  <div class="card doodles-card">
+    <div class="card-body">
+      <h3><a href="{{ item.url }}">{{ item.data.title }}</a></h3>
+      <p class="muted">Tiny single-file web toys reminiscent of the flash games of old.</p>
+    </div>
+    <div class="thumb doodle-thumbs">
+      {%- for d in doodles | reverse -%}
+        <img src="{{ d.data.image }}" alt="{{ d.data.title }}" loading="lazy"/>
+      {%- endfor -%}
+    </div>
+  </div>
+{%- else -%}
+  <div class="card">
+    <div class="card-body">
+      <h3><a href="{{ item.url }}">{{ item.data.title }}</a></h3>
+      <p class="muted">{{ item.data.description | safe }}</p>
+    </div>
+    <div class="thumb"><img src="{{ item.data.image }}" alt="{{ item.data.title }}" loading="lazy"/></div>
+  </div>
+{%- endif -%}
+{%- endmacro %}

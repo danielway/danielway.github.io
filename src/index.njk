@@ -4,6 +4,7 @@ eleventyNavigation:
   key: About
   order: 0
 ---
+{% import "project-card.njk" as cards %}
 
 <article class="about">
   <div class="photo">
@@ -13,25 +14,16 @@ eleventyNavigation:
   <p class="title">Staff Software Engineer at Workiva</p>
   <p class="muted">
     Life-long technologist with a passion for learning, teaching, and building. Experienced as a full-stack software
-    engineer working on a variety of customer-facing and backend systems.
+    engineer working on a variety of customer-facing and backend systems. Lately I've been building weather-radar
+    tooling in Rust and small interactive simulations for the web.
   </p>
 </article>
 <article class="projects">
-  <h2>Projects</h2>
+  <h2><a href="/projects/">Projects</a></h2>
   <div class="cards">
-    {% set projects = collections.projects | reverse | limit(4) %}
-    {%- for project in projects -%}
-      <div>
-        <div>
-          <h3>
-            <a href="{{ project.url }}">{{ project.data.title }}</a>
-          </h3>
-          <p class="muted">{{ project.data.description | safe }}</p>
-        </div>
-        <div>
-          <img src="{{ project.data.image }}" alt="git-cc"/>
-        </div>
-      </div>
+    {# Same source and ordering as the projects list, capped to the first four. #}
+    {%- for item in collections.projectsOrdered | limit(4) -%}
+      {{ cards.projectCard(item, collections.doodles) }}
     {%- endfor -%}
   </div>
 </article>

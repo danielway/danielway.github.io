@@ -5,6 +5,7 @@ tags: projects
 createdDate: git Created
 updatedDate: git Last Modified
 ---
+{% import "icons.njk" as icons %}
 
 <article class="projects">
     <div class="header">
@@ -18,10 +19,12 @@ updatedDate: git Last Modified
             </span>
         </div>
         <div class="icons">
-            <a href="https://github.com/{{githubRepo}}">
-                <img class="light" src="/images/github.svg"/>
-                <img class="dark" src="/images/github-white.svg"/>
-            </a>
+            {% if liveUrl %}
+                <a class="icon-btn" href="{{ liveUrl }}" target="_blank" rel="noopener" aria-label="Launch {{ title }}">{{ icons.icon("play") }}</a>
+            {% endif %}
+            {% if githubRepo %}
+                <a class="icon-btn" href="https://github.com/{{ githubRepo }}" target="_blank" rel="noopener" aria-label="View {{ title }} on GitHub">{{ icons.icon("github") }}</a>
+            {% endif %}
         </div>
     </div>
     {{ content | safe }}

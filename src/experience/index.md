@@ -42,7 +42,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Staff Software Engineer</h3>
-            <span class="dates">Jul 2024 – Present · 1 yr 11 mos</span>
+            <span class="dates">Jul 2024 – Present</span>
           </div>
           <p>
             Technical lead for a core platform experience, now leading a new team formed around a
@@ -70,7 +70,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Senior Software Engineer</h3>
-            <span class="dates">Oct 2022 – Jul 2024 · 1 yr 10 mos</span>
+            <span class="dates">Oct 2022 – Jul 2024</span>
           </div>
           <p>
             Full-stack engineer and technical lead for a core platform experience. Collaborated
@@ -92,7 +92,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Software Engineer</h3>
-            <span class="dates">Sep 2021 – Oct 2022 · 1 yr 2 mos</span>
+            <span class="dates">Sep 2021 – Oct 2022</span>
           </div>
           <p>
             Delivered full-stack solutions for a spreadsheet web application and APIs used by
@@ -124,7 +124,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Software Developer II</h3>
-            <span class="dates">May 2021 – Sep 2021 · 5 mos · Full-time</span>
+            <span class="dates">May 2021 – Sep 2021 · Full-time</span>
           </div>
           <p>
             Full-stack software developer working on the design and implementation of both
@@ -148,7 +148,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Software Developer I</h3>
-            <span class="dates">Jan 2020 – May 2021 · 1 yr 5 mos · Part-time</span>
+            <span class="dates">Jan 2020 – May 2021 · Part-time</span>
           </div>
           <p>
             Full-stack software developer working on internal workbench and external portal
@@ -173,7 +173,7 @@ eleventyNavigation:
         <li class="role">
           <div class="role-head">
             <h3>Software Development Intern</h3>
-            <span class="dates">Jan 2017 – Jan 2020 · 3 yrs 1 mo · Internship</span>
+            <span class="dates">Jan 2017 – Jan 2020 · Internship</span>
           </div>
           <p class="role-sub">Continental Western Group (a Berkley Company) · Urbandale, Iowa</p>
           <p>

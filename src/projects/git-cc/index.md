@@ -29,7 +29,8 @@ move forward with `ENTER`/`Tab`, back with `ESC`/`BackTab`, and quit with
 I built it to learn Rust and to take the friction out of writing consistent,
 structured commit messages. The most interesting part turned out to be the
 terminal interface itself: along the way I factored the interactive prompts into
-three small, reusable TTY libraries.
+three small, reusable TTY libraries, including
+[tty-interface](/projects/tty-interface/).
 
 <video autoplay loop muted playsinline width="500px">
     <source src="https://user-images.githubusercontent.com/1724257/200127461-176898e8-1216-4c94-bc72-630a2fdb995e.mov" type="video/mp4">

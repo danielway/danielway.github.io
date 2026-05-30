@@ -1,5 +1,6 @@
 ---
 layout: project.njk
+order: 1
 createdDate: 2026-05-30
 updatedDate: 2026-05-30
 title: NEXRAD Workbench

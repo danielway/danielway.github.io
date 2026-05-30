@@ -1,5 +1,6 @@
 ---
 layout: project.njk
+order: 2
 createdDate: 2023-02-11
 updatedDate: 2023-02-11
 title: micrograd-rs

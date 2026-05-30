@@ -19,6 +19,14 @@ module.exports = function (eleventyConfig) {
 
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
 
+  // Projects (incl. the Doodles entry) ordered by an explicit `order` field —
+  // deterministic and independent of dates. Lower numbers sort first.
+  eleventyConfig.addCollection("projectsOrdered", (collectionApi) =>
+    collectionApi
+      .getFilteredByTag("projects")
+      .sort((a, b) => (a.data.order ?? Infinity) - (b.data.order ?? Infinity))
+  );
+
   eleventyConfig.addFilter("postDate", (dateObj) => {
     return DateTime.fromJSDate(dateObj).toLocaleString(DateTime.DATE_MED);
   });

@@ -1,0 +1,40 @@
+---
+layout: base.njk
+tags: projects
+order: 3
+title: Doodles
+---
+
+<article class="projects doodles-gallery">
+  <div class="header">
+    <div>
+      <h1>Doodles</h1>
+    </div>
+  </div>
+
+  <p class="lead">
+    Tiny single-file web toys reminiscent of the flash games of old. Each one is
+    self-contained, with no build step and no dependencies beyond a CDN, spun up from a prompt
+    or two. Click in and play; the prompts that made each one are right there on the page.
+  </p>
+
+  <div class="cards">
+    {% set doodles = collections.doodles | reverse %}
+    {%- for doodle in doodles -%}
+      <div class="card">
+        <div>
+          <h3>
+            <a href="{{ doodle.url }}">{{ doodle.data.title }}</a>
+          </h3>
+          <p class="muted">{{ doodle.data.description | safe }}</p>
+          <p class="doodle-tags muted">
+            {{ doodle.data.tool }}{% if doodle.data.model %} · {{ doodle.data.model }}{% endif %}
+          </p>
+        </div>
+        <div>
+          <img src="{{ doodle.data.image }}" alt="{{ doodle.data.title }}"/>
+        </div>
+      </div>
+    {%- endfor -%}
+  </div>
+</article>

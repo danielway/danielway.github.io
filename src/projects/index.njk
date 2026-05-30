@@ -5,48 +5,37 @@ eleventyNavigation:
   order: 2
 ---
 
-{% if collections.doodles.length %}
-<article class="projects doodles-gallery">
-  <h2>Doodles</h2>
-  <p class="muted lead">One-off, single-file web apps conjured from a prompt or two — playable right here.</p>
-  <div class="cards">
-    {% set doodles = collections.doodles | reverse %}
-    {%- for doodle in doodles -%}
-      <div class="card">
-        <div>
-          <h3>
-            <a href="{{ doodle.url }}">{{ doodle.data.title }}</a>
-          </h3>
-          <p class="muted">{{ doodle.data.description | safe }}</p>
-          <p class="doodle-tags muted">
-            {{ doodle.data.tool }}{% if doodle.data.model %} · {{ doodle.data.model }}{% endif %}
-          </p>
-        </div>
-        <div>
-          <img src="{{ doodle.data.image }}" alt="{{ doodle.data.title }}"/>
-        </div>
-      </div>
-    {%- endfor -%}
-  </div>
-</article>
-{% endif %}
-
 <article class="projects">
   <h2>Projects</h2>
   <div class="cards">
-    {% set projects = collections.projects | reverse %}
-    {%- for project in projects -%}
-      <div class="card">
-        <div>
-          <h3>
-            <a href="{{ project.url }}">{{ project.data.title }}</a>
-          </h3>
-          <p class="muted">{{ project.data.description | safe }}</p>
+    {%- for project in collections.projectsOrdered -%}
+      {%- if project.url == "/projects/doodles/" -%}
+        <div class="card doodles-card">
+          <div>
+            <h3>
+              <a href="{{ project.url }}">{{ project.data.title }}</a>
+            </h3>
+            <p class="muted">Tiny single-file web toys reminiscent of the flash games of old.</p>
+          </div>
+          <div class="doodle-thumbs">
+            {%- for doodle in collections.doodles | reverse -%}
+              <img src="{{ doodle.data.image }}" alt="{{ doodle.data.title }}"/>
+            {%- endfor -%}
+          </div>
         </div>
-        <div>
-          <img src="{{ project.data.image }}" alt="git-cc"/>
+      {%- else -%}
+        <div class="card">
+          <div>
+            <h3>
+              <a href="{{ project.url }}">{{ project.data.title }}</a>
+            </h3>
+            <p class="muted">{{ project.data.description | safe }}</p>
+          </div>
+          <div>
+            <img src="{{ project.data.image }}" alt="{{ project.data.title }}"/>
+          </div>
         </div>
-      </div>
+      {%- endif -%}
     {%- endfor -%}
   </div>
 </article>

@@ -84,18 +84,44 @@ article.projects {
   }
 }
 
-article.projects.doodles-gallery {
-  margin-top: 2rem;
-
-  .lead {
-    margin-top: -0.4rem;
-    font-size: 0.9rem;
-  }
-
+article.projects {
   .doodle-tags {
     margin: 0.3rem 0 0;
     font-size: 0.75rem;
     font-style: italic;
+  }
+
+  // The single "Doodles" entry in the projects list — a collection masquerading
+  // as one item, so its thumbnail is a little mosaic of the doodles within.
+  .card.doodles-card {
+    .doodle-thumbs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3px;
+      align-self: stretch;
+
+      img {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        border-radius: 3px;
+      }
+
+      // Drop the odd one out so the grid stays tidy.
+      img:nth-child(n + 5) {
+        display: none;
+      }
+    }
+  }
+}
+
+article.projects.doodles-gallery {
+  .lead {
+    margin: 0.4rem 0 1.6rem;
+    font-size: 0.9rem;
+    max-width: 46rem;
   }
 }
 

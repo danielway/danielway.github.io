@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Orbital Ascent</title>
+<style>
+  :root {
+    --bg: #05070d;
+    --panel: rgba(16, 21, 31, 0.82);
+    --panel-solid: #101521;
+    --line: #283143;
+    --text: #e6edf3;
+    --muted: #8a97a8;
+    --accent: #6cc6ff;
+    --pro: #74e0a0;     /* prograde green */
+    --apo: #6cc6ff;     /* apoapsis blue  */
+    --peri: #ffb95e;    /* periapsis amber */
+    --warn: #ff7a6b;
+    --liquid: #5aa9ff;
+    --solid: #ffae54;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #app { position: relative; height: 100%; width: 100%; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  .hidden { display: none !important; }
+  button { font-family: inherit; }
+
+  /* ----------------------------------------------------------- menu */
+  #menu {
+    position: absolute; inset: 0;
+    overflow: auto;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(108,198,255,.12), transparent 60%),
+      var(--bg);
+    padding: 22px 18px 30px;
+  }
+  #menu h1 { margin: 4px 0 2px; font-size: 22px; letter-spacing: .3px; }
+  #menu .sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; max-width: 720px; }
+  #fleet {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    max-width: 1000px;
+  }
+  .ship {
+    background: var(--panel-solid);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 14px 14px;
+    display: flex; flex-direction: column; gap: 9px;
+    transition: border-color .12s, transform .05s;
+  }
+  .ship:hover { border-color: #3c4a60; }
+  .ship h3 { margin: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .ship .diff { margin-left: auto; font-size: 10.5px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .ship .blurb { color: var(--muted); font-size: 12px; min-height: 32px; margin: -2px 0 0; }
+  .ship .stages-vis { display: flex; flex-direction: column; gap: 3px; }
+  .ship .sv-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .ship .sv-bar { height: 8px; border-radius: 3px; flex: 1 1 auto; min-width: 0; }
+  .ship .sv-tag { width: 14px; text-align: center; font-weight: 700; font-size: 10px; border-radius: 3px; padding: 1px 0; }
+  .tag-L { background: rgba(90,169,255,.18); color: var(--liquid); }
+  .tag-S { background: rgba(255,174,84,.18); color: var(--solid); }
+  .ship .specs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; font-size: 11.5px; }
+  .ship .specs span { color: var(--muted); }
+  .ship .specs b { color: var(--text); font-weight: 600; }
+  .ship .go {
+    margin-top: 2px;
+    background: linear-gradient(180deg, #2b71b8, #245f9c);
+    color: #fff; border: 1px solid #3b86cf; border-radius: 8px;
+    padding: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
+  }
+  .ship .go:hover { filter: brightness(1.08); }
+  .ship .go:active { transform: translateY(1px); }
+
+  /* ----------------------------------------------------------- HUD */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  #topbar {
+    position: absolute; top: 8px; left: 8px; right: 8px;
+    display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center;
+    padding: 7px 10px; pointer-events: none;
+  }
+  .chip { display: flex; flex-direction: column; line-height: 1.15; min-width: 56px; }
+  .chip .k { font-size: 9.5px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .chip .v { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip .v small { font-size: 10px; color: var(--muted); font-weight: 500; }
+  .chip.sep { border-left: 1px solid var(--line); padding-left: 10px; margin-left: 2px; min-width: 0; }
+  #chipApo .v { color: var(--apo); }
+  #chipPeri .v { color: var(--peri); }
+
+  #status {
+    position: absolute; top: 58px; left: 50%; transform: translateX(-50%);
+    text-align: center; pointer-events: none; width: max-content; max-width: 92%;
+  }
+  #status .big { font-size: 26px; font-weight: 700; letter-spacing: .5px; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+  #status .small { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+  #status .warn { color: var(--warn); }
+  #status .good { color: var(--pro); }
+
+  /* stage stack */
+  #stages {
+    position: absolute; left: 8px; bottom: 64px;
+    width: 188px; padding: 8px 9px; display: flex; flex-direction: column; gap: 6px;
+  }
+  #stages .title { font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+  .st {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 5px; border-radius: 7px; border: 1px solid transparent;
+  }
+  .st.active { border-color: var(--accent); background: rgba(108,198,255,.07); }
+  .st.spent { opacity: .4; }
+  .st .ico { width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font-size: 10px; font-weight: 800; flex: 0 0 auto; }
+  .st .nm { font-size: 11px; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st .bar { width: 54px; height: 7px; border-radius: 4px; background: #1b2230; overflow: hidden; flex: 0 0 auto; }
+  .st .bar > i { display: block; height: 100%; width: 100%; }
+
+  /* bottom controls */
+  #bottombar {
+    position: absolute; left: 8px; right: 8px; bottom: 8px;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 7px 9px;
+  }
+  #bottombar .grp { display: flex; align-items: center; gap: 6px; }
+  #bottombar .spacer { flex: 1 1 auto; }
+  .btn {
+    background: var(--panel-solid); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 11px; cursor: pointer; font-size: 13px; line-height: 1;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn:hover { border-color: #3c4a60; }
+  .btn:active { transform: translateY(1px); }
+  .btn.on { border-color: var(--pro); color: var(--pro); box-shadow: 0 0 0 1px var(--pro) inset; }
+  .btn.stage { background: linear-gradient(180deg,#b85a2b,#9c4824); border-color:#cf6f3b; color:#fff; font-weight:600; }
+  .btn.wide { min-width: 40px; justify-content: center; }
+  #thr { display: flex; align-items: center; gap: 7px; }
+  #thr label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
+  #thrRange { width: 120px; accent-color: var(--accent); }
+  #thrRange:disabled { opacity: .45; }
+  #thrVal { font-size: 12px; font-variant-numeric: tabular-nums; width: 34px; text-align: right; }
+  #warpVal { font-size: 12px; min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
+
+  /* help + modal */
+  #help {
+    position: absolute; right: 8px; top: 52px; width: 268px; padding: 12px 13px;
+    font-size: 12px; line-height: 1.5;
+  }
+  #help h4 { margin: 0 0 6px; font-size: 12px; }
+  #help kbd {
+    background: #0c111b; border: 1px solid var(--line); border-bottom-width: 2px;
+    border-radius: 4px; padding: 0 5px; font: 11px ui-monospace, Menlo, monospace; color: var(--text);
+  }
+  #help .row { display: flex; gap: 8px; margin: 3px 0; }
+  #help .row .d { color: var(--muted); }
+  #help .tip { color: var(--muted); margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+
+  #modal {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    background: rgba(3,5,10,.66); backdrop-filter: blur(3px);
+  }
+  #modal .card { width: min(440px, 90%); padding: 20px 22px; text-align: center; }
+  #modal h2 { margin: 2px 0 6px; font-size: 24px; }
+  #modal .ico { font-size: 36px; }
+  #modal p { color: var(--muted); margin: 4px 0 0; }
+  #modal .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin: 14px 0 4px; text-align: left; }
+  #modal .stats div { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding: 3px 0; }
+  #modal .stats span { color: var(--muted); }
+  #modal .stats b { font-variant-numeric: tabular-nums; }
+  #modal .actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+  #modal .actions .btn { padding: 9px 16px; font-weight: 600; }
+  #modal .actions .primary { background: linear-gradient(180deg,#2b71b8,#245f9c); border-color:#3b86cf; color:#fff; }
+
+  @media (max-width: 620px) {
+    #help { display: none; }
+    .chip { min-width: 48px; }
+    #stages { width: 150px; }
+    #thrRange { width: 84px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="c"></canvas>
+
+  <!-- ============ rocket select ============ -->
+  <div id="menu">
+    <h1>Orbital Ascent</h1>
+    <p class="sub">Pick a launch vehicle, fly the gravity turn, stage at the right moment, and trim your
+      throttle to settle into a stable orbit. Burn too long and you'll fly off into deep space; too
+      little and you fall back to the surface. Mind the air — drag bites hard down low.</p>
+    <div id="fleet"></div>
+  </div>
+
+  <!-- ============ flight HUD ============ -->
+  <div id="topbar" class="panel hidden">
+    <div class="chip"><span class="k">Altitude</span><span class="v" id="vAlt">0<small> m</small></span></div>
+    <div class="chip"><span class="k">Speed</span><span class="v" id="vSpd">0<small> m/s</small></span></div>
+    <div class="chip"><span class="k">Vert</span><span class="v" id="vVert">0<small> m/s</small></span></div>
+    <div class="chip sep" id="chipApo"><span class="k">Apoapsis</span><span class="v" id="vApo">—</span></div>
+    <div class="chip" id="chipPeri"><span class="k">Periapsis</span><span class="v" id="vPeri">—</span></div>
+    <div class="chip"><span class="k">Period</span><span class="v" id="vPer">—</span></div>
+    <div class="chip sep"><span class="k">Throttle</span><span class="v" id="vThr">100<small>%</small></span></div>
+    <div class="chip"><span class="k">Mission</span><span class="v" id="vTime">T‑00:03</span></div>
+  </div>
+
+  <div id="status" class="hidden">
+    <div class="big" id="statusBig"></div>
+    <div class="small" id="statusSmall"></div>
+  </div>
+
+  <div id="stages" class="panel hidden">
+    <div class="title">Stages</div>
+    <div id="stageList"></div>
+  </div>
+
+  <div id="help" class="panel hidden">
+    <h4>Controls</h4>
+    <div class="row"><kbd>A</kbd><kbd>D</kbd><span class="d">/ ← →&nbsp; steer (pitch)</span></div>
+    <div class="row"><kbd>W</kbd><kbd>S</kbd><span class="d">/ ↑ ↓&nbsp; throttle</span></div>
+    <div class="row"><kbd>Z</kbd><kbd>X</kbd><span class="d">full / cut throttle</span></div>
+    <div class="row"><kbd>Space</kbd><span class="d">stage &amp; ignite next</span></div>
+    <div class="row"><kbd>T</kbd><span class="d">cycle hold: pro / retro / off</span></div>
+    <div class="row"><kbd>,</kbd><kbd>.</kbd><span class="d">time warp</span></div>
+    <div class="row"><kbd>P</kbd><span class="d">pause</span></div>
+    <div class="tip">Go straight up, then ease over toward the horizon as you climb — build sideways
+      speed until your <b style="color:var(--peri)">periapsis</b> rises above the atmosphere.</div>
+  </div>
+
+  <div id="bottombar" class="panel hidden">
+    <div class="grp">
+      <button class="btn wide" id="bLeft" title="Steer left (A)">◀</button>
+      <button class="btn stage" id="bStage" title="Stage (Space)">▲ Stage</button>
+      <button class="btn wide" id="bRight" title="Steer right (D)">▶</button>
+    </div>
+    <div class="grp" id="thr">
+      <label>Throttle</label>
+      <input type="range" id="thrRange" min="0" max="100" value="100">
+      <span id="thrVal">100%</span>
+    </div>
+    <button class="btn" id="bHold" title="Cycle attitude hold (T)">Hold: Off</button>
+    <div class="spacer"></div>
+    <div class="grp">
+      <button class="btn wide" id="bWarpDown" title="Slow time (,)">«</button>
+      <span id="warpVal">1×</span>
+      <button class="btn wide" id="bWarpUp" title="Speed time (.)">»</button>
+    </div>
+    <button class="btn" id="bPause" title="Pause (P)">⏸</button>
+    <button class="btn" id="bMenu" title="Back to hangar">Hangar</button>
+  </div>
+
+  <!-- ============ result modal ============ -->
+  <div id="modal" class="hidden">
+    <div class="card panel">
+      <div class="ico" id="mIco">🛰️</div>
+      <h2 id="mTitle">Orbit achieved</h2>
+      <p id="mDesc"></p>
+      <div class="stats" id="mStats"></div>
+      <div class="actions" id="mActions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  /* ================================================================= world */
+  const R      = 600000;            // planet radius (m)
+  const G0     = 9.81;              // surface gravity (m/s^2)
+  const MU     = G0 * R * R;        // gravitational parameter  (3.5316e12)
+  const ATMO   = 70000;             // atmosphere top above surface (m)
+  const RHO0   = 1.225;             // sea-level air density (kg/m^3)
+  const HSCALE = 5600;              // density scale height (m)
+  const TWO_PI = Math.PI * 2;
+  const DEG    = Math.PI / 180;
+
+  // air density at a given altitude
+  function density(alt) {
+    if (alt >= ATMO || alt < 0) return alt < 0 ? RHO0 : 0;
+    return RHO0 * Math.exp(-alt / HSCALE);
+  }
+
+  /* ================================================================= fleet */
+  // Each stage: type liquid|solid, dry mass, propellant mass, full thrust (N),
+  // exhaust velocity ve (m/s -> flow = thrust/ve). Index 0 is the booster (lit first).
+  const ROCKETS = [
+    {
+      id: 'comet', name: 'Comet I', difficulty: 'Novice', drag: 1.0, payload: 800,
+      blurb: 'A gentle two-stage liquid trainer. Throttle everything, restart at will, loads of margin.',
+      stages: [
+        { type:'liquid', name:'Core',  dry:3000, fuel:14000, thrust:330000, ve:2900 },
+        { type:'liquid', name:'Upper', dry:1200, fuel:4200,  thrust:62000,  ve:3150 },
+      ],
+    },
+    {
+      id: 'ember', name: 'Ember', difficulty: 'Intermediate', drag: 1.1, payload: 700,
+      blurb: 'A solid booster slings you skyward — no throttle, full commit — then a nimble liquid upper circularizes.',
+      stages: [
+        { type:'solid',  name:'Booster', dry:2500, fuel:12000, thrust:380000, ve:2550 },
+        { type:'liquid', name:'Upper',   dry:1000, fuel:5200,  thrust:72000,  ve:3150 },
+      ],
+    },
+    {
+      id: 'titan', name: 'Titan Heavy', difficulty: 'Heavy', drag: 1.6, payload: 1500,
+      blurb: 'Three liquid stages and brute delta-v. Easy to reach orbit — and just as easy to overshoot into the void.',
+      stages: [
+        { type:'liquid', name:'Booster', dry:6000, fuel:30000, thrust:820000, ve:2950 },
+        { type:'liquid', name:'Core',    dry:2600, fuel:13000, thrust:240000, ve:3150 },
+        { type:'liquid', name:'Upper',   dry:1200, fuel:5000,  thrust:70000,  ve:3250 },
+      ],
+    },
+    {
+      id: 'firecracker', name: 'Firecracker', difficulty: 'Expert', drag: 0.9, payload: 400,
+      blurb: 'Three solid motors, zero throttle. You only steer and choose when to light the next one. Coast and commit.',
+      stages: [
+        { type:'solid', name:'Stage 1', dry:2000, fuel:9000, thrust:330000, ve:2500 },
+        { type:'solid', name:'Stage 2', dry:900,  fuel:4500, thrust:135000, ve:2550 },
+        { type:'solid', name:'Stage 3', dry:500,  fuel:2200, thrust:46000,  ve:2650 },
+      ],
+    },
+  ];
+
+  // total launch mass of a rocket spec
+  function wetMass(spec) {
+    let m = spec.payload;
+    for (const s of spec.stages) m += s.dry + s.fuel;
+    return m;
+  }
+  // ideal delta-v (Tsiolkovsky, stage by stage) for the card readout
+  function totalDV(spec) {
+    let carried = spec.payload, dv = 0;
+    for (let i = spec.stages.length - 1; i >= 0; i--) {
+      const s = spec.stages[i];
+      const mEnd = carried + s.dry, mStart = mEnd + s.fuel;
+      dv += s.ve * Math.log(mStart / mEnd);
+      carried = mStart;
+    }
+    return dv;
+  }
+  function liftoffTWR(spec) {
+    return spec.stages[0].thrust / (wetMass(spec) * G0);
+  }
+
+  /* ================================================================= DOM */
+  const cvs = document.getElementById('c');
+  const ctx = cvs.getContext('2d');
+  const $ = (id) => document.getElementById(id);
+  const menu = $('menu'), fleet = $('fleet');
+  const topbar = $('topbar'), statusEl = $('status'), stagesEl = $('stages'),
+        helpEl = $('help'), bottombar = $('bottombar'), modal = $('modal');
+  const HUD = [topbar, statusEl, stagesEl, helpEl, bottombar];
+
+  /* ================================================================= state */
+  const WARPS = [1, 2, 5, 10, 50, 100];
+  const ROT = 52 * DEG;             // manual steering rate (rad / real-sec)
+  const HOLD_ROT = 130 * DEG;       // attitude-hold slew rate
+  const MAXSTEP = 0.04;             // max physics sub-step (s)
+
+  let dpr = 1, frame = 0;
+  let scene = 'menu';               // menu | fly
+  let stars = [];
+
+  // vehicle + sim state (filled by start())
+  let S = null;
+
+  // input
+  const keys = Object.create(null);
+  let steerBtn = 0;                 // -1 left, +1 right (from on-screen buttons)
+
+  // camera (smoothed)
+  const cam = { cx:0, cy:R, half:2500, t:0 };
+
+  /* ================================================================= helpers */
+  const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+  const lerp  = (a,b,t) => a + (b - a) * t;
+
+  function fmtAlt(m) {
+    const a = Math.abs(m);
+    if (a >= 1000) return (m/1000).toFixed(a >= 100000 ? 0 : 1) + ' km';
+    return Math.round(m) + ' m';
+  }
+  function fmtBig(m) {
+    if (!isFinite(m)) return '∞';
+    return (m/1000).toFixed(Math.abs(m) >= 100000 ? 0 : 1) + ' km';
+  }
+  function fmtSpeed(v) { return Math.round(v).toLocaleString() + ' m/s'; }
+  function fmtTime(t) {
+    const sign = t < 0 ? '−' : '+';
+    t = Math.abs(t); const m = Math.floor(t/60), s = Math.floor(t%60);
+    return 'T' + sign + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+  function fmtDur(t) {
+    if (!isFinite(t) || t <= 0) return '—';
+    const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = Math.floor(t%60);
+    return (h ? h + 'h ' : '') + (m || h ? m + 'm ' : '') + s + 's';
+  }
+
+  /* ================================================================= menu */
+  function buildMenu() {
+    fleet.innerHTML = '';
+    for (const spec of ROCKETS) {
+      const card = document.createElement('div');
+      card.className = 'ship';
+
+      const rows = spec.stages.map((s, i) => {
+        const frac = s.fuel / (s.fuel + s.dry);
+        const tag = s.type === 'solid' ? 'S' : 'L';
+        const col = s.type === 'solid' ? 'var(--solid)' : 'var(--liquid)';
+        return `<div class="sv-row">
+            <span class="sv-tag tag-${tag}">${tag}</span>
+            <span class="sv-bar" style="background:linear-gradient(90deg, ${col} ${Math.round(frac*100)}%, #222b3a ${Math.round(frac*100)}%)"></span>
+          </div>`;
+      }).reverse().join('');
+
+      card.innerHTML = `
+        <h3>${spec.name}<span class="diff">${spec.difficulty}</span></h3>
+        <p class="blurb">${spec.blurb}</p>
+        <div class="stages-vis">${rows}</div>
+        <div class="specs">
+          <span>Stages</span><b>${spec.stages.length} · ${spec.stages.map(s=>s.type[0].toUpperCase()).join('-')}</b>
+          <span>Liftoff TWR</span><b>${liftoffTWR(spec).toFixed(2)}</b>
+          <span>Ideal Δv</span><b>${Math.round(totalDV(spec)).toLocaleString()} m/s</b>
+          <span>Mass</span><b>${(wetMass(spec)/1000).toFixed(1)} t</b>
+        </div>
+        <button class="go">Launch ${spec.name} ▸</button>`;
+      card.querySelector('.go').addEventListener('click', () => start(spec));
+      fleet.appendChild(card);
+    }
+  }
+
+  /* ================================================================= start */
+  function start(spec) {
+    const stages = spec.stages.map(s => ({ ...s, fuelMax: s.fuel, ignited:false, spent:false }));
+    S = {
+      spec,
+      stages,
+      payload: spec.payload,
+      drag: spec.drag,
+      // kinematics: launch from the top of the planet, pointing straight up
+      px: 0, py: R, vx: 0, vy: 0,
+      dir: Math.PI / 2,              // heading angle (atan2 y,x); +y = up = radially out
+      active: 0,
+      throttle: 1,
+      warpIdx: 0,
+      hold: 0,                       // 0 off, 1 prograde, 2 retrograde
+      paused: false,
+      phase: 'pad',                  // pad | flight
+      countdown: 3.0,
+      missionT: -3.0,
+      orbited: false,
+      done: false,
+      // running peaks for the debrief
+      maxAlt: 0, maxSpd: 0, maxQ: 0,
+      // cached orbital elements (recomputed each frame)
+      el: null,
+      // cached predicted path
+      path: null, apoPt:null, pePt:null, impactPt:null,
+      // toast / warning text
+      warnUntil: 0,
+    };
+    buildStageList();
+    setHold(0);
+    setThrottleUI();
+    setWarpUI();
+    cam.cx = 0; cam.cy = R; cam.half = 2600; cam.t = 0;
+
+    scene = 'fly';
+    menu.classList.add('hidden');
+    modal.classList.add('hidden');
+    for (const el of HUD) el.classList.remove('hidden');
+    resize();
+    try { window.focus(); } catch(e) {}
+  }
+
+  function toMenu() {
+    scene = 'menu';
+    S = null;
+    menu.classList.remove('hidden');
+    modal.classList.add('hidden');
+    for (const el of HUD) el.classList.add('hidden');
+  }
+
+  /* ================================================================= stage UI */
+  let stageNodes = [];
+  function buildStageList() {
+    const list = $('stageList');
+    list.innerHTML = '';
+    stageNodes = [];
+    // show booster at the bottom of the stack
+    for (let i = S.stages.length - 1; i >= 0; i--) {
+      const s = S.stages[i];
+      const row = document.createElement('div');
+      row.className = 'st';
+      const col = s.type === 'solid' ? 'var(--solid)' : 'var(--liquid)';
+      row.innerHTML = `
+        <span class="ico" style="background:${s.type==='solid'?'rgba(255,174,84,.18)':'rgba(90,169,255,.18)'};color:${col}">${s.type==='solid'?'S':'L'}</span>
+        <span class="nm">${s.name}</span>
+        <span class="bar"><i style="background:${col}"></i></span>`;
+      list.appendChild(row);
+      stageNodes[i] = { row, fill: row.querySelector('i') };
+    }
+  }
+  function updateStageList() {
+    for (let i = 0; i < S.stages.length; i++) {
+      const s = S.stages[i], n = stageNodes[i];
+      if (!n) continue;
+      n.fill.style.width = (100 * s.fuel / s.fuelMax) + '%';
+      n.row.classList.toggle('active', i === S.active && !S.done);
+      n.row.classList.toggle('spent', i < S.active);
+    }
+  }
+
+  /* ================================================================= controls */
+  function activeStage() { return S.active < S.stages.length ? S.stages[S.active] : null; }
+
+  function igniteActive() {
+    const s = activeStage();
+    if (!s) return;
+    s.ignited = true;
+    if (s.type === 'liquid' && S.throttle <= 0) { S.throttle = 1; setThrottleUI(); }
+  }
+
+  function doStage() {
+    if (S.done) return;
+    if (S.active >= S.stages.length) return;
+    S.stages[S.active].spent = true;
+    S.active++;
+    const s = activeStage();
+    if (s) {
+      s.ignited = true;
+      if (s.type === 'liquid') { S.throttle = 1; setThrottleUI(); }
+      flash(s.type === 'solid' ? 'IGNITION' : 'STAGE SEPARATION', s.name + ' online');
+    } else {
+      flash('PAYLOAD ONLY', 'no stages remain — coasting');
+    }
+    updateStageList();
+  }
+
+  function setThrottle(v) {
+    S.throttle = clamp(v, 0, 1);
+    setThrottleUI();
+  }
+  function setThrottleUI() {
+    const s = activeStage();
+    const solid = s && s.type === 'solid';
+    const r = $('thrRange');
+    const dragging = document.activeElement === r;   // don't fight the user mid-drag
+    if (solid) {
+      const shown = (s.fuel > 0 && s.ignited) ? 100 : 0;
+      if (!dragging) r.value = shown;
+      r.disabled = true;
+      $('thrVal').textContent = shown + '%';
+    } else {
+      r.disabled = false;
+      if (!dragging) r.value = Math.round(S.throttle * 100);
+      $('thrVal').textContent = Math.round(S.throttle * 100) + '%';
+    }
+  }
+  function setHold(h) {
+    S.hold = h;
+    const b = $('bHold');
+    b.textContent = 'Hold: ' + (h === 1 ? 'Prograde' : h === 2 ? 'Retro' : 'Off');
+    b.classList.toggle('on', h !== 0);
+  }
+  function cycleHold() { setHold((S.hold + 1) % 3); }
+
+  function setWarp(idx) {
+    S.warpIdx = clamp(idx, 0, WARPS.length - 1);
+    setWarpUI();
+  }
+  function setWarpUI() { $('warpVal').textContent = WARPS[S.warpIdx] + '×'; }
+
+  function togglePause() {
+    S.paused = !S.paused;
+    $('bPause').textContent = S.paused ? '▶' : '⏸';
+    $('bPause').classList.toggle('on', S.paused);
+  }
+
+  let flashUntil = 0;
+  function flash(big, small) {
+    S._flashBig = big; S._flashSmall = small || '';
+    flashUntil = frame + 110;       // ~1.8s at 60fps
+  }
+
+  /* ================================================================= input */
+  window.addEventListener('keydown', (e) => {
+    if (scene !== 'fly') return;
+    const k = e.key.toLowerCase();
+    if ([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+    keys[k] = true;
+    if (k === ' ') doStage();
+    else if (k === 'z') setThrottle(1);
+    else if (k === 'x') setThrottle(0);
+    else if (k === 't') cycleHold();
+    else if (k === 'p') togglePause();
+    else if (k === ',') setWarp(S.warpIdx - 1);
+    else if (k === '.') setWarp(S.warpIdx + 1);
+  });
+  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+  function holdBtn(id, on) {
+    const el = $(id);
+    const set = (v) => (e) => { e.preventDefault(); steerBtn = v; };
+    el.addEventListener('pointerdown', set(on));
+    el.addEventListener('pointerup',   set(0));
+    el.addEventListener('pointerleave',set(0));
+    el.addEventListener('pointercancel',set(0));
+  }
+  holdBtn('bLeft', +1);             // ◀ rotates heading CCW (toward "up/left")
+  holdBtn('bRight', -1);            // ▶ rotates heading CW
+  $('bStage').addEventListener('click', doStage);
+  $('bHold').addEventListener('click', cycleHold);
+  $('bPause').addEventListener('click', togglePause);
+  $('bWarpUp').addEventListener('click', () => setWarp(S.warpIdx + 1));
+  $('bWarpDown').addEventListener('click', () => setWarp(S.warpIdx - 1));
+  $('bMenu').addEventListener('click', toMenu);
+  $('thrRange').addEventListener('input', (e) => {
+    const s = activeStage();
+    if (s && s.type === 'liquid') setThrottle(e.target.value / 100);
+  });
+  cvs.addEventListener('pointerdown', () => { try { window.focus(); } catch(e){} });
+
+  /* ================================================================= physics */
+  // returns {T, flow} for the active stage at the current throttle
+  function thrustOf() {
+    const s = activeStage();
+    if (!s || s.fuel <= 0 || !s.ignited) return { T:0, flow:0 };
+    const th = s.type === 'solid' ? 1 : S.throttle;
+    if (th <= 0) return { T:0, flow:0 };
+    return { T: s.thrust * th, flow: (s.thrust / s.ve) * th };
+  }
+  function curMass() {
+    let m = S.payload;
+    for (let i = S.active; i < S.stages.length; i++) m += S.stages[i].dry + S.stages[i].fuel;
+    return m;
+  }
+
+  function physicsStep(h) {
+    const { px, py, vx, vy } = S;
+    const r = Math.hypot(px, py) || 1;
+    const m = curMass();
+
+    // gravity
+    const g = -MU / (r * r * r);    // multiplied by position vector below
+    let ax = g * px, ay = g * py;
+
+    // thrust along heading
+    const tf = thrustOf();
+    if (tf.T > 0) {
+      const a = tf.T / m;
+      ax += a * Math.cos(S.dir);
+      ay += a * Math.sin(S.dir);
+      // burn propellant
+      const s = activeStage();
+      s.fuel = Math.max(0, s.fuel - tf.flow * h);
+    }
+
+    // atmospheric drag (atmosphere assumed static)
+    const alt = r - R;
+    const rho = density(alt);
+    if (rho > 0) {
+      const sp = Math.hypot(vx, vy);
+      if (sp > 0.01) {
+        const fk = 0.5 * rho * S.drag * sp / m;   // = 0.5 rho Cd A |v| / m ; * v gives accel
+        ax -= fk * vx;
+        ay -= fk * vy;
+      }
+      S.maxQ = Math.max(S.maxQ, 0.5 * rho * sp_sq(vx, vy));
+    }
+
+    // semi-implicit (symplectic) Euler — stable for orbits
+    S.vx += ax * h; S.vy += ay * h;
+    S.px += S.vx * h; S.py += S.vy * h;
+
+    // ground interaction
+    const nr = Math.hypot(S.px, S.py);
+    if (S.phase === 'pad') {
+      if (nr < R) {                 // resting on the pad
+        const k = R / nr;
+        S.px *= k; S.py *= k;
+        const radv = (S.vx * S.px + S.vy * S.py) / R;
+        if (radv < 0) { S.vx -= radv * S.px / R; S.vy -= radv * S.py / R; }
+      }
+      if (nr - R > 30) { S.phase = 'flight'; }
+    } else if (nr <= R) {
+      // touched the surface in flight
+      const k = R / nr; S.px *= k; S.py *= k;
+      crash();
+    }
+  }
+  function sp_sq(x, y) { return x*x + y*y; }
+
+  /* ================================================================= orbital elements */
+  function elements() {
+    const { px, py, vx, vy } = S;
+    const r = Math.hypot(px, py) || 1;
+    const v2 = vx*vx + vy*vy;
+    const energy = v2/2 - MU/r;
+    const a = -MU / (2 * energy);
+    const rdotv = px*vx + py*vy;
+    // eccentricity vector
+    const c = (v2 - MU/r);
+    const ex = (c*px - rdotv*vx) / MU;
+    const ey = (c*py - rdotv*vy) / MU;
+    const ecc = Math.hypot(ex, ey);
+    const bound = energy < 0;
+    const apoR = bound ? a * (1 + ecc) : Infinity;
+    const periR = a * (1 - ecc);     // valid for hyperbola too (a<0)
+    const period = bound && a > 0 ? TWO_PI * Math.sqrt(a*a*a / MU) : Infinity;
+    return { r, v: Math.sqrt(v2), energy, a, ecc, bound, apoR, periR,
+             apoAlt: apoR - R, periAlt: periR - R, period };
+  }
+
+  /* ================================================================= prediction */
+  // forward-integrate the *ballistic* coast (gravity only) for the projected path
+  function predict() {
+    let px = S.px, py = S.py, vx = S.vx, vy = S.vy;
+    const hs = Math.abs(px*vy - py*vx);          // specific angular momentum (conserved)
+    const pts = [px, py];
+    let swept = 0, lastA = Math.atan2(py, px);
+    let apoPt = null, pePt = null, impactPt = null;
+    let maxR = Math.hypot(px, py), minR = maxR;
+
+    const MAXPTS = 620;
+    for (let i = 0; i < MAXPTS; i++) {
+      const r = Math.hypot(px, py);
+      // adaptive step: ~constant angular increment, capped for near-radial cases
+      let dt = (TWO_PI / 300) * r * r / Math.max(hs, 1e-3);
+      dt = clamp(dt, 0.25, 90);
+      // finer steps when fast and low — smooths the near-vertical ascent arc
+      if (r < R * 1.6 && (vx*vx + vy*vy) > 40000) dt = Math.min(dt, 6);
+      // velocity Verlet under gravity
+      const r3 = r * r * r;
+      const ax0 = -MU * px / r3, ay0 = -MU * py / r3;
+      px += vx*dt + 0.5*ax0*dt*dt;
+      py += vy*dt + 0.5*ay0*dt*dt;
+      const r1 = Math.hypot(px, py), r13 = r1*r1*r1;
+      const ax1 = -MU * px / r13, ay1 = -MU * py / r13;
+      vx += 0.5*(ax0+ax1)*dt;
+      vy += 0.5*(ay0+ay1)*dt;
+
+      if (r1 < R) {                  // impact: clip to the surface and stop
+        const t = (Math.hypot(pts[pts.length-2], pts[pts.length-1]) - R) /
+                  Math.max(1e-6, Math.hypot(pts[pts.length-2], pts[pts.length-1]) - r1);
+        const ix = lerp(pts[pts.length-2], px, clamp(t,0,1));
+        const iy = lerp(pts[pts.length-1], py, clamp(t,0,1));
+        impactPt = [ix, iy];
+        pts.push(ix, iy);
+        break;
+      }
+      pts.push(px, py);
+
+      if (r1 > maxR) { maxR = r1; apoPt = [px, py]; }
+      if (r1 < minR) { minR = r1; pePt = [px, py]; }
+
+      // accumulate swept angle; stop after a full revolution
+      const ang = Math.atan2(py, px);
+      let d = ang - lastA;
+      while (d >  Math.PI) d -= TWO_PI;
+      while (d < -Math.PI) d += TWO_PI;
+      swept += d; lastA = ang;
+      if (Math.abs(swept) >= TWO_PI - 0.05) break;   // closed the loop
+      if (r1 > 18 * R) break;                         // escaping — stop drawing
+    }
+    S.path = pts; S.apoPt = apoPt; S.pePt = pePt; S.impactPt = impactPt;
+  }
+
+  /* ================================================================= win / lose */
+  function crash() {
+    if (S.done) return;
+    S.done = true;
+    endScreen('crash');
+  }
+  function checkEnd(el) {
+    if (S.done) return;
+    if (S.orbited) return;          // already celebrated; let them keep flying
+    // success: bound orbit with periapsis clear of the atmosphere
+    if (el.bound && el.periAlt >= ATMO) {
+      S.orbited = true;
+      endScreen('orbit');
+    } else if (!el.bound && el.r > 13 * R) {
+      S.done = true;
+      endScreen('escape');
+    }
+  }
+
+  /* ================================================================= camera */
+  function updateCamera(el) {
+    const alt = el.r - R;
+    // local view (good for the powered ascent) vs orbital view (frames the whole orbit)
+    const localHalf = alt * 1.6 + 2600;
+    const orbHalf = clamp(Math.max(isFinite(el.apoR) ? el.apoR : 6*R, el.r) * 1.18, 1.2*R, 6*R);
+    const t = clamp((alt - ATMO * 0.4) / (ATMO * 1.5), 0, 1);     // blend across the upper atmosphere
+    const targetHalf = lerp(localHalf, orbHalf, t);
+    const centerLerp = t * 0.92;
+    const tcx = S.px * (1 - centerLerp);
+    const tcy = S.py * (1 - centerLerp);
+
+    const k = S.paused ? 1 : 0.08;
+    cam.half += (targetHalf - cam.half) * k;
+    cam.cx   += (tcx - cam.cx) * k;
+    cam.cy   += (tcy - cam.cy) * k;
+    cam.t = t;
+  }
+
+  /* ================================================================= render */
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const w = cvs.clientWidth, h = cvs.clientHeight;
+    cvs.width = Math.round(w * dpr);
+    cvs.height = Math.round(h * dpr);
+    makeStars(w, h);
+  }
+  function makeStars(w, h) {
+    stars = [];
+    const n = Math.round(w * h / 5200);
+    for (let i = 0; i < n; i++) {
+      stars.push({ x: Math.random()*w, y: Math.random()*h,
+                   r: Math.random()*1.1 + 0.2, a: Math.random()*0.6 + 0.2 });
+    }
+  }
+
+  function w2s(wx, wy, out) {
+    const W = cvs.width, H = cvs.height;
+    const scale = (H / 2) / (cam.half * dpr) * dpr;   // px per metre
+    out[0] = W/2 + (wx - cam.cx) * scale;
+    out[1] = H/2 - (wy - cam.cy) * scale;
+    return scale;
+  }
+
+  const _p = [0,0], _q = [0,0];
+  function scaleNow() { return (cvs.height / 2) / cam.half; }
+
+  function render(el) {
+    const W = cvs.width, H = cvs.height;
+    ctx.setTransform(1,0,0,1,0,0);
+
+    // space backdrop
+    const sky = ctx.createLinearGradient(0,0,0,H);
+    sky.addColorStop(0, '#05070d');
+    sky.addColorStop(1, '#0a1020');
+    ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
+
+    // stars (screen-space, faint parallax with camera)
+    ctx.save();
+    const par = clamp((cam.half) / (6*R), 0, 1);
+    for (const s of stars) {
+      ctx.globalAlpha = s.a * (0.5 + 0.5*par);
+      ctx.fillStyle = '#cfe3ff';
+      ctx.beginPath();
+      ctx.arc(s.x*dpr, s.y*dpr, s.r*dpr, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    const scale = scaleNow();
+    w2s(0, 0, _p); const osx = _p[0], osy = _p[1];   // planet centre in screen space
+    const Rs = R * scale, ATs = (R+ATMO) * scale;
+
+    // atmosphere glow
+    if (ATs > 4) {
+      const ag = ctx.createRadialGradient(osx, osy, Rs*0.985, osx, osy, ATs);
+      ag.addColorStop(0, 'rgba(90,150,230,0.34)');
+      ag.addColorStop(0.5,'rgba(70,120,200,0.12)');
+      ag.addColorStop(1, 'rgba(70,120,200,0)');
+      ctx.fillStyle = ag;
+      ctx.beginPath(); ctx.arc(osx, osy, ATs, 0, TWO_PI); ctx.fill();
+    }
+
+    // planet body
+    const pg = ctx.createRadialGradient(osx - Rs*0.35, osy - Rs*0.4, Rs*0.1, osx, osy, Rs);
+    pg.addColorStop(0,  '#3a5a44');
+    pg.addColorStop(0.55,'#274736');
+    pg.addColorStop(0.85,'#1d3550');
+    pg.addColorStop(1,  '#142840');
+    ctx.fillStyle = pg;
+    ctx.beginPath(); ctx.arc(osx, osy, Rs, 0, TWO_PI); ctx.fill();
+
+    // a few darker "continents" / cloud bands for texture, rotating slowly
+    ctx.save();
+    ctx.beginPath(); ctx.arc(osx, osy, Rs, 0, TWO_PI); ctx.clip();
+    const rot = frame * 0.0016;
+    ctx.globalAlpha = 0.18;
+    for (let i = 0; i < 5; i++) {
+      const a = rot + i * 1.3;
+      const cx2 = osx + Math.cos(a) * Rs * 0.5;
+      const cy2 = osy + Math.sin(a*1.3) * Rs * 0.55;
+      ctx.fillStyle = i % 2 ? '#22402f' : '#2f5240';
+      ctx.beginPath(); ctx.ellipse(cx2, cy2, Rs*0.4, Rs*0.22, a, 0, TWO_PI); ctx.fill();
+    }
+    ctx.restore();
+
+    // crisp surface rim
+    ctx.strokeStyle = 'rgba(150,200,255,0.5)';
+    ctx.lineWidth = 1.3 * dpr;
+    ctx.beginPath(); ctx.arc(osx, osy, Rs, 0, TWO_PI); ctx.stroke();
+
+    // ---- predicted trajectory ----
+    if (S.path && S.path.length >= 4) {
+      ctx.lineWidth = 1.6 * dpr;
+      ctx.strokeStyle = el.bound ? 'rgba(116,224,160,0.85)' : 'rgba(255,170,90,0.9)';
+      ctx.beginPath();
+      for (let i = 0; i < S.path.length; i += 2) {
+        w2s(S.path[i], S.path[i+1], _p);
+        if (i === 0) ctx.moveTo(_p[0], _p[1]); else ctx.lineTo(_p[0], _p[1]);
+      }
+      ctx.stroke();
+
+      // apoapsis / periapsis / impact markers
+      if (S.apoPt && el.bound) marker(S.apoPt, '#6cc6ff', 'Ap ' + fmtBig(el.apoAlt));
+      if (S.pePt && el.bound && el.periAlt > 0) marker(S.pePt, '#ffb95e', 'Pe ' + fmtBig(el.periAlt));
+      if (S.impactPt) marker(S.impactPt, '#ff7a6b', 'Impact', true);
+    }
+
+    // ---- rocket ----
+    drawRocket(el);
+
+    // little scale / altitude reference along the bottom-left handled by HUD
+  }
+
+  function marker(world, color, label, cross) {
+    w2s(world[0], world[1], _p);
+    const x = _p[0], y = _p[1];
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.6*dpr;
+    ctx.beginPath();
+    if (cross) {
+      const r = 4*dpr;
+      ctx.moveTo(x-r,y-r); ctx.lineTo(x+r,y+r);
+      ctx.moveTo(x+r,y-r); ctx.lineTo(x-r,y+r);
+      ctx.stroke();
+    } else {
+      ctx.arc(x, y, 4*dpr, 0, TWO_PI); ctx.stroke();
+      ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(x, y, 1.4*dpr, 0, TWO_PI); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.font = (11*dpr) + 'px ui-sans-serif, system-ui, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + 8*dpr, y);
+    ctx.restore();
+  }
+
+  function drawRocket(el) {
+    w2s(S.px, S.py, _p);
+    const x = _p[0], y = _p[1];
+    const ang = -S.dir;             // screen y is flipped
+    const size = 9 * dpr;
+
+    // heat tint from dynamic pressure
+    const q = 0.5 * density(el.r - R) * el.v * el.v;
+    const heat = clamp((q - 8000) / 26000, 0, 1);
+
+    const tf = thrustOf();
+    const thr = tf.T > 0 ? (activeStage().type === 'solid' ? 1 : S.throttle) : 0;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang + Math.PI/2);    // model drawn nose-up (+y), rotate into heading
+
+    // exhaust flame
+    if (thr > 0 && !S.paused) {
+      const fl = size * (1.4 + thr * 2.4) * (0.8 + Math.random()*0.4);
+      const fg = ctx.createLinearGradient(0, size*1.1, 0, size*1.1 + fl);
+      fg.addColorStop(0, 'rgba(255,240,180,0.95)');
+      fg.addColorStop(0.4,'rgba(255,150,60,0.85)');
+      fg.addColorStop(1, 'rgba(255,80,40,0)');
+      ctx.fillStyle = fg;
+      ctx.beginPath();
+      ctx.moveTo(-size*0.5, size*1.1);
+      ctx.lineTo(size*0.5, size*1.1);
+      ctx.lineTo((Math.random()-0.5)*size*0.5, size*1.1 + fl);
+      ctx.closePath(); ctx.fill();
+    }
+
+    // fins
+    ctx.fillStyle = '#8492a6';
+    ctx.beginPath();
+    ctx.moveTo(-size*0.5, size*0.5); ctx.lineTo(-size*1.0, size*1.2); ctx.lineTo(-size*0.5, size*1.2); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(size*0.5, size*0.5); ctx.lineTo(size*1.0, size*1.2); ctx.lineTo(size*0.5, size*1.2); ctx.closePath(); ctx.fill();
+
+    // body
+    ctx.fillStyle = '#e8edf4';
+    ctx.beginPath();
+    ctx.moveTo(0, -size*1.5);                 // nose
+    ctx.lineTo(size*0.5, -size*0.4);
+    ctx.lineTo(size*0.5, size*1.15);
+    ctx.lineTo(-size*0.5, size*1.15);
+    ctx.lineTo(-size*0.5, -size*0.4);
+    ctx.closePath(); ctx.fill();
+    // window
+    ctx.fillStyle = '#3aa0d8';
+    ctx.beginPath(); ctx.arc(0, -size*0.35, size*0.26, 0, TWO_PI); ctx.fill();
+
+    if (heat > 0.02) {              // re-entry / max-Q glow on the nose
+      ctx.globalAlpha = heat;
+      ctx.fillStyle = '#ff6a4d';
+      ctx.beginPath(); ctx.ellipse(0, -size*1.4, size*0.7, size*0.5, 0, 0, TWO_PI); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+
+    // prograde marker (where you're actually heading)
+    if (el.v > 12) {
+      const pvx = S.vx / el.v, pvy = S.vy / el.v;
+      const mx = x + pvx * 26 * dpr, my = y - pvy * 26 * dpr;
+      ctx.strokeStyle = 'rgba(116,224,160,0.95)'; ctx.lineWidth = 1.6*dpr;
+      ctx.beginPath(); ctx.arc(mx, my, 5*dpr, 0, TWO_PI); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(mx-7*dpr,my); ctx.lineTo(mx-5*dpr,my);
+      ctx.moveTo(mx+7*dpr,my); ctx.lineTo(mx+5*dpr,my);
+      ctx.moveTo(mx,my-7*dpr); ctx.lineTo(mx,my-5*dpr);
+      ctx.stroke();
+    }
+  }
+
+  /* ================================================================= HUD update */
+  function updateHUD(el) {
+    $('vAlt').innerHTML  = fmtAltHTML(el.r - R);
+    $('vSpd').innerHTML  = Math.round(el.v).toLocaleString() + '<small> m/s</small>';
+    const vert = (S.vx*S.px + S.vy*S.py) / el.r;
+    $('vVert').innerHTML = (vert>=0?'+':'−') + Math.round(Math.abs(vert)) + '<small> m/s</small>';
+    $('vApo').textContent  = el.bound ? fmtBig(el.apoAlt) : '—';
+    $('vPeri').textContent = el.periAlt > -R ? fmtBig(el.periAlt) : '—';
+    $('vPer').textContent  = fmtDur(el.period);
+    const s = activeStage();
+    const thrPct = s ? (s.type==='solid' ? (s.fuel>0&&s.ignited?100:0) : Math.round(S.throttle*100)) : 0;
+    $('vThr').innerHTML = thrPct + '<small>%</small>';
+    $('vTime').textContent = fmtTime(S.missionT);
+
+    updateStatus(el);
+  }
+  function fmtAltHTML(m) {
+    const a = Math.abs(m);
+    if (a >= 1000) return (m/1000).toFixed(a>=100000?0:1) + '<small> km</small>';
+    return Math.round(m) + '<small> m</small>';
+  }
+
+  function updateStatus(el) {
+    const big = $('statusBig'), small = $('statusSmall');
+    big.className = 'big'; small.className = 'small';
+
+    if (S.phase === 'pad' && S.countdown > 0) {
+      const n = Math.ceil(S.countdown);
+      big.textContent = n > 0 ? 'T‑ ' + n : 'LIFTOFF';
+      small.textContent = S.spec.name + ' · cleared for launch';
+      return;
+    }
+    if (frame < flashUntil && S._flashBig) {
+      big.textContent = S._flashBig; small.textContent = S._flashSmall;
+      return;
+    }
+    if (S.paused) { big.textContent = 'PAUSED'; small.textContent = 'press P to resume'; return; }
+
+    // contextual flight status / warnings
+    const alt = el.r - R;
+    if (!el.bound && !S.done) {
+      big.textContent = 'ESCAPE TRAJECTORY';
+      big.classList.add('warn');
+      small.textContent = 'burn retrograde (hold: retro) to fall back into orbit';
+    } else if (S.orbited) {
+      big.textContent = 'IN ORBIT';
+      big.classList.add('good');
+      small.textContent = 'stable — keep flying or head back to the hangar';
+    } else if (alt < ATMO && el.v > 240 && 0.5*density(alt)*el.v*el.v > 14000) {
+      big.textContent = 'MAX Q';
+      big.classList.add('warn');
+      small.textContent = 'high aero stress — easing the throttle saves fuel';
+    } else {
+      const tf = thrustOf();
+      if (tf.T > 0) { big.textContent = alt < ATMO ? 'ASCENDING' : 'BURNING'; small.textContent = ''; }
+      else {
+        big.textContent = 'COASTING';
+        small.textContent = el.bound && el.apoAlt > ATMO
+          ? 'near apoapsis, burn prograde to raise periapsis'
+          : '';
+      }
+    }
+  }
+
+  /* ================================================================= end screen */
+  function endScreen(kind) {
+    const el = elements();
+    const m = $('mIco'), t = $('mTitle'), d = $('mDesc'), st = $('mStats'), ac = $('mActions');
+    let stats = [
+      ['Apoapsis', el.bound ? fmtBig(el.apoAlt) : '∞'],
+      ['Periapsis', fmtBig(el.periAlt)],
+      ['Eccentricity', el.ecc.toFixed(3)],
+      ['Top speed', fmtSpeed(S.maxSpd)],
+      ['Max altitude', fmtBig(S.maxAlt)],
+      ['Mission time', fmtDur(Math.max(0,S.missionT))],
+    ];
+    let primaryKeep = false;
+    if (kind === 'orbit') {
+      m.textContent = '🛰️'; t.textContent = 'Orbit Achieved';
+      d.textContent = 'You threaded the needle — a stable orbit clear of the atmosphere.';
+      primaryKeep = true;
+    } else if (kind === 'escape') {
+      m.textContent = '🌌'; t.textContent = 'Lost to Space';
+      d.textContent = 'Too much velocity — you slipped the planet’s grip and sailed off on a hyperbolic escape.';
+    } else {
+      m.textContent = '💥'; t.textContent = 'Crashed';
+      d.textContent = el.apoAlt > ATMO
+        ? 'So close — your apoapsis cleared the air, but periapsis never did. A touch more sideways speed.'
+        : 'Down hard. Pitch over earlier and trade vertical climb for orbital (sideways) speed.';
+    }
+    st.innerHTML = stats.map(s => `<div><span>${s[0]}</span><b>${s[1]}</b></div>`).join('');
+
+    ac.innerHTML = '';
+    if (primaryKeep) {
+      addBtn(ac, 'Keep flying', 'primary', () => modal.classList.add('hidden'));
+      addBtn(ac, 'New rocket', '', toMenu);
+    } else {
+      addBtn(ac, 'Try again', 'primary', () => start(S.spec));
+      addBtn(ac, 'New rocket', '', toMenu);
+    }
+    modal.classList.remove('hidden');
+  }
+  function addBtn(parent, label, cls, fn) {
+    const b = document.createElement('button');
+    b.className = 'btn ' + cls; b.textContent = label;
+    b.addEventListener('click', fn); parent.appendChild(b);
+  }
+
+  /* ================================================================= main loop */
+  let last = 0;
+  function tick(now) {
+    requestAnimationFrame(tick);
+    frame++;
+    const dtReal = last ? Math.min(0.05, (now - last) / 1000) : 0.016;
+    last = now;
+
+    if (scene !== 'fly' || !S) { return; }
+
+    // ensure canvas matches size
+    if (cvs.width !== Math.round(cvs.clientWidth*dpr) || cvs.height !== Math.round(cvs.clientHeight*dpr)) resize();
+
+    // advance the sim unless paused, finished, or a result card is up
+    const advance = !S.paused && !S.done && modal.classList.contains('hidden');
+    const counting = S.phase === 'pad' && S.countdown > 0;
+
+    // ----- steering (real-time, independent of warp) -----
+    if (advance && !counting) applySteering(dtReal);
+
+    // ----- countdown -----
+    if (counting) {
+      if (advance) {
+        S.countdown -= dtReal;
+        S.missionT = -S.countdown;
+        if (S.countdown <= 0) { S.missionT = 0; igniteActive(); flash('LIFTOFF', S.spec.name + ' has cleared the pad'); }
+      }
+    } else if (advance) {
+      // ----- physics with time warp + sub-stepping -----
+      let warp = WARPS[S.warpIdx];
+      const alt = Math.hypot(S.px,S.py) - R;
+      if (alt < ATMO) warp = Math.min(warp, 5);     // keep control inside the atmosphere
+      $('warpVal').textContent = warp + '×';
+      const simDt = dtReal * warp;
+      S.missionT += simDt;
+      let steps = Math.min(1600, Math.max(1, Math.ceil(simDt / MAXSTEP)));
+      const h = simDt / steps;
+      for (let i = 0; i < steps && !S.done; i++) physicsStep(h);
+
+      // peaks
+      const a2 = Math.hypot(S.px,S.py) - R;
+      S.maxAlt = Math.max(S.maxAlt, a2);
+      S.maxSpd = Math.max(S.maxSpd, Math.hypot(S.vx,S.vy));
+    }
+
+    // ----- derive, predict, evaluate -----
+    const el = elements();
+    S.el = el;
+    predict();
+    if (advance) checkEnd(el);
+
+    updateCamera(el);
+    render(el);
+    updateHUD(el);
+    updateStageList();
+    setThrottleUI();
+  }
+
+  function applySteering(dt) {
+    if (S.hold !== 0) {
+      // attitude hold: slew toward prograde / retrograde
+      const v = Math.hypot(S.vx, S.vy);
+      if (v > 8) {
+        let target = Math.atan2(S.vy, S.vx);
+        if (S.hold === 2) target += Math.PI;
+        let d = target - S.dir;
+        while (d >  Math.PI) d -= TWO_PI;
+        while (d < -Math.PI) d += TWO_PI;
+        const step = clamp(d, -HOLD_ROT*dt, HOLD_ROT*dt);
+        S.dir += step;
+      }
+      return;
+    }
+    let s = 0;
+    if (keys['a'] || keys['arrowleft']) s += 1;
+    if (keys['d'] || keys['arrowright']) s -= 1;
+    s += steerBtn;
+    if (s) S.dir += clamp(s,-1,1) * ROT * dt;
+
+    // throttle keys (held)
+    if (activeStage() && activeStage().type === 'liquid') {
+      if (keys['w'] || keys['arrowup']) setThrottle(S.throttle + 0.9*dt);
+      if (keys['s'] || keys['arrowdown']) setThrottle(S.throttle - 0.9*dt);
+    }
+    if (S.dir > Math.PI) S.dir -= TWO_PI;
+    if (S.dir < -Math.PI) S.dir += TWO_PI;
+  }
+
+  /* ================================================================= boot */
+  window.addEventListener('resize', () => { if (scene==='fly') resize(); });
+  buildMenu();
+  resize();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

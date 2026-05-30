@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="750" viewBox="0 0 1200 750" font-family="ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <radialGradient id="soil" cx="50%" cy="45%" r="75%">
+      <stop offset="0" stop-color="#241a12"/>
+      <stop offset="0.6" stop-color="#1a130d"/>
+      <stop offset="1" stop-color="#0f0b07"/>
+    </radialGradient>
+    <radialGradient id="nest" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#7a5a36"/>
+      <stop offset="0.55" stop-color="#5b421f"/>
+      <stop offset="1" stop-color="#5b421f" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="food" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#beff96"/>
+      <stop offset="0.5" stop-color="#78d25a"/>
+      <stop offset="1" stop-color="#509640" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="1200" height="750" fill="url(#soil)"/>
+
+  <!-- pheromone trails: green to food, blue to home -->
+  <g filter="url(#glow)" opacity="0.85">
+    <path d="M320,400 C470,330 560,250 760,210" fill="none" stroke="#7fd456" stroke-width="22" stroke-linecap="round"/>
+    <path d="M320,400 C500,470 640,560 880,580" fill="none" stroke="#7fd456" stroke-width="20" stroke-linecap="round"/>
+    <path d="M320,400 C430,380 470,330 760,210" fill="none" stroke="#4aa6e6" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
+    <path d="M320,400 C520,440 640,540 880,580" fill="none" stroke="#4aa6e6" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <path d="M320,400 C420,300 520,240 470,150" fill="none" stroke="#7fd456" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+  </g>
+
+  <!-- rock wall with a gap -->
+  <g fill="#4a433a" opacity="0.92">
+    <rect x="648" y="40" width="30" height="430" rx="15"/>
+    <rect x="648" y="560" width="30" height="160" rx="15"/>
+    <circle cx="663" cy="120" r="20"/><circle cx="663" cy="300" r="22"/><circle cx="663" cy="630" r="20"/>
+  </g>
+
+  <!-- food sources -->
+  <g>
+    <circle cx="760" cy="210" r="60" fill="url(#food)"/>
+    <circle cx="880" cy="580" r="58" fill="url(#food)"/>
+    <circle cx="470" cy="150" r="34" fill="url(#food)"/>
+  </g>
+
+  <!-- nest -->
+  <circle cx="320" cy="400" r="120" fill="url(#nest)"/>
+  <circle cx="320" cy="400" r="34" fill="#120c06"/>
+  <circle cx="320" cy="400" r="34" fill="none" stroke="#f0c88c" stroke-opacity="0.35" stroke-width="2.5"/>
+
+  <!-- ants -->
+  <g stroke-linecap="round">
+    <g stroke="#e7d6b4" stroke-width="4">
+      <line x1="430" y1="372" x2="438" y2="366"/>
+      <line x1="540" y1="300" x2="549" y2="296"/>
+      <line x1="500" y1="455" x2="509" y2="459"/>
+      <line x1="610" y1="250" x2="619" y2="245"/>
+      <line x1="700" y1="560" x2="709" y2="563"/>
+      <line x1="410" y1="250" x2="418" y2="244"/>
+      <line x1="380" y1="500" x2="388" y2="505"/>
+    </g>
+    <g stroke="#ffd24a" stroke-width="4.5">
+      <line x1="690" y1="225" x2="681" y2="231"/>
+      <line x1="820" y1="565" x2="811" y2="569"/>
+      <line x1="560" y1="430" x2="551" y2="425"/>
+    </g>
+    <g fill="#9ee06a">
+      <circle cx="678" cy="234" r="3.5"/>
+      <circle cx="808" cy="571" r="3.5"/>
+      <circle cx="548" cy="423" r="3.5"/>
+    </g>
+  </g>
+
+  <!-- title chip -->
+  <g>
+    <rect x="40" y="40" width="318" height="74" rx="14" fill="#1c1610" fill-opacity="0.85" stroke="#dcc8a029" stroke-width="1"/>
+    <text x="62" y="74" fill="#efe6d6" font-size="26" font-weight="700">Ant Colony</text>
+    <text x="62" y="99" fill="#b6a489" font-size="15">emergent pheromone foraging</text>
+  </g>
+</svg>

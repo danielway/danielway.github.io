@@ -7,7 +7,7 @@ description: A living ant colony that forages by pheromone — trails reinforce,
 model: Claude Opus 4.8
 tool: Claude Code
 appFile: /assets/doodles/ant-colony.html
-image: /images/doodles/ant-colony.svg
+image: /images/doodles/ant-colony.png
 height: 640px
 prompts:
   - >-

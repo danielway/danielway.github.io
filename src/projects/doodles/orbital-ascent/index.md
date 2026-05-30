@@ -7,7 +7,7 @@ description: Fly a rocket from the pad to a stable orbit — pick a vehicle, run
 model: Claude Opus 4.8
 tool: Claude Code
 appFile: /assets/doodles/orbital-ascent.html
-image: /images/doodles/orbital-ascent.svg
+image: /images/doodles/orbital-ascent.png
 height: 680px
 prompts:
   - >-

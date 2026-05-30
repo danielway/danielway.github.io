@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Particle Sandbox</title>
+<style>
+  :root {
+    --bg: #0d1016;
+    --panel: #161b24;
+    --panel-2: #1d2430;
+    --line: #2a3240;
+    --text: #e6edf3;
+    --muted: #8a97a8;
+    --accent: #6cc6ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  #toolbar {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #palette { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mat {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px 4px 5px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--panel-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    transition: border-color .12s, transform .04s;
+  }
+  .mat:hover { border-color: #3c4858; }
+  .mat:active { transform: translateY(1px); }
+  .mat .dot {
+    width: 13px; height: 13px; border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
+    flex: 0 0 auto;
+  }
+  .mat.sel {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 12px -4px var(--accent);
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  #controls .group { display: inline-flex; align-items: center; gap: 6px; }
+  #controls button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  #controls button:hover { border-color: #3c4858; }
+  #controls input[type=range] { width: 96px; accent-color: var(--accent); }
+  #controls .val { min-width: 14px; text-align: right; color: var(--text); }
+  .hint { margin-left: auto; opacity: .7; }
+  .hint b { color: var(--text); font-weight: 600; }
+
+  #stage { position: relative; flex: 1 1 auto; min-height: 0; background: var(--bg); }
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    touch-action: none;
+    cursor: crosshair;
+    image-rendering: pixelated;
+  }
+  @media (max-width: 560px) {
+    .hint { display: none; }
+    .mat { padding: 4px 6px 4px 5px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <div id="palette"></div>
+    <div id="controls">
+      <div class="group">
+        <button id="playBtn" title="Play / pause (space)">⏸ Pause</button>
+        <button id="clearBtn" title="Clear everything (c)">Clear</button>
+      </div>
+      <div class="group" title="Brush size (scroll on canvas, or [ ])">
+        <span>Brush</span>
+        <input id="brush" type="range" min="1" max="22" value="5">
+        <span class="val" id="brushVal">5</span>
+      </div>
+      <div class="group" title="Simulation speed">
+        <span>Speed</span>
+        <input id="speed" type="range" min="1" max="4" value="1">
+        <span class="val" id="speedVal">1</span>
+      </div>
+      <span class="hint"><b>Drag</b> to paint · <b>right-drag</b> erases · <b>scroll</b> resizes brush</span>
+    </div>
+  </div>
+  <div id="stage"><canvas id="c"></canvas></div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  /* ---------------------------------------------------------------- materials */
+  const EMPTY=0, WALL=1, STONE=2, SAND=3, WATER=4, OIL=5, LAVA=6, WOOD=7,
+        METAL=8, FIRE=9, SPARK=10, SMOKE=11, STEAM=12, GUNPOWDER=13, ACID=14,
+        ICE=15, PLANT=16, SEED=17, SALT=18, COAL=19, GLASS=20, FAN=21,
+        CLONER=22, ASH=23;
+  const NMAT = 24;
+  const ERASE = -1;
+
+  // movement category
+  const ST=0, POW=1, LIQ=2, GAS=3;            // static, powder, liquid, gas
+  const cat = new Array(NMAT).fill(ST);
+  cat[SAND]=POW; cat[GUNPOWDER]=POW; cat[SALT]=POW; cat[SEED]=POW;
+  cat[COAL]=POW; cat[ASH]=POW; cat[SPARK]=POW;
+  cat[WATER]=LIQ; cat[OIL]=LIQ; cat[LAVA]=LIQ; cat[ACID]=LIQ;
+  cat[SMOKE]=GAS; cat[STEAM]=GAS; cat[FIRE]=GAS;
+
+  // density — only compared between fluids/gases & EMPTY (air). Higher sinks.
+  const den = new Float32Array(NMAT);
+  den[EMPTY]=1.0;
+  den[FIRE]=0.2; den[STEAM]=0.3; den[SMOKE]=0.4; den[SPARK]=0.5;
+  den[OIL]=1.5; den[WATER]=2.0; den[ACID]=2.0; den[LAVA]=4.0;
+  den[SAND]=3.0; den[SALT]=3.0; den[SEED]=2.6; den[GUNPOWDER]=2.6;
+  den[COAL]=2.8; den[ASH]=2.2;
+
+  // how easily wind pushes a cell around (lighter = blown more)
+  const wgt = new Float32Array(NMAT).fill(1);
+  wgt[SMOKE]=0.2; wgt[STEAM]=0.25; wgt[FIRE]=0.3; wgt[SPARK]=0.4; wgt[ASH]=0.6;
+  wgt[SAND]=1.0; wgt[SEED]=1.1; wgt[SALT]=1.0; wgt[GUNPOWDER]=1.0; wgt[COAL]=1.2;
+  wgt[WATER]=1.3; wgt[ACID]=1.3; wgt[OIL]=1.0; wgt[LAVA]=5.0;
+
+  // flammability — per-frame ignition chance when touched by heat
+  const ignite = new Float32Array(NMAT);
+  ignite[WOOD]=0.06; ignite[PLANT]=0.13; ignite[SEED]=0.10;
+  ignite[COAL]=0.03; ignite[OIL]=0.25;
+  // how long the resulting flame lives (frames)
+  const burnLife = new Int16Array(NMAT);
+  burnLife[WOOD]=70; burnLife[PLANT]=34; burnLife[SEED]=30;
+  burnLife[COAL]=210; burnLife[OIL]=48;
+
+  // acid corrosion chance per frame
+  const corrode = new Float32Array(NMAT);
+  corrode[SAND]=0.12; corrode[STONE]=0.04; corrode[WOOD]=0.07; corrode[METAL]=0.05;
+  corrode[PLANT]=0.13; corrode[ICE]=0.10; corrode[COAL]=0.05; corrode[SALT]=0.16;
+  corrode[GUNPOWDER]=0.08; corrode[SEED]=0.13; corrode[ASH]=0.13; corrode[CLONER]=0.04;
+  // WALL & GLASS resist acid (handy for containers).
+
+  // base colors for non-animated materials
+  const cr=new Int16Array(NMAT), cg=new Int16Array(NMAT), cb=new Int16Array(NMAT);
+  function col(m,r,g,b){ cr[m]=r; cg[m]=g; cb[m]=b; }
+  col(WALL,90,98,110); col(STONE,122,114,101); col(SAND,224,196,120);
+  col(WATER,46,108,206); col(OIL,64,52,38); col(WOOD,138,92,46);
+  col(METAL,178,186,198); col(GUNPOWDER,72,74,82); col(ACID,124,238,72);
+  col(ICE,176,224,242); col(PLANT,72,172,82); col(SEED,154,118,62);
+  col(SALT,234,238,244); col(COAL,46,46,50); col(GLASS,196,226,234);
+  col(FAN,128,140,152); col(CLONER,198,128,255); col(ASH,112,106,100);
+
+  // texture/noise amplitude per material
+  const texf = new Float32Array(NMAT).fill(0.75);
+  texf[WATER]=0.35; texf[ACID]=0.4; texf[GLASS]=0.3; texf[ICE]=0.45; texf[METAL]=0.5;
+  texf[SALT]=0.5;
+
+  // human-facing palette (order matters for the toolbar)
+  const PALETTE = [
+    [WALL,'Wall'], [WOOD,'Wood'], [METAL,'Metal'], [STONE,'Stone'], [GLASS,'Glass'], [ICE,'Ice'],
+    [SAND,'Sand'], [GUNPOWDER,'Gunpowder'], [SALT,'Salt'], [COAL,'Coal'], [SEED,'Seed'], [PLANT,'Plant'],
+    [WATER,'Water'], [OIL,'Oil'], [ACID,'Acid'], [LAVA,'Lava'],
+    [FIRE,'Fire'], [FAN,'Fan ↑'], [CLONER,'Cloner'], [ERASE,'Eraser'],
+  ];
+
+  /* ---------------------------------------------------------------- state */
+  const CELL = 6;                  // target cell size in CSS px
+  const cvs = document.getElementById('c');
+  const ctx = cvs.getContext('2d', { alpha:false });
+  const stage = document.getElementById('stage');
+
+  let W=0, H=0, N=0;
+  let grid, life, tint, clone, moved, windX, windY;
+  let off, offctx, offimg, off32;
+  let frame=0, ltr=true, paused=false, speed=1, brush=5;
+  let selected = SAND;
+
+  const rnd = Math.random;
+  const ri = (a,b) => a + ((rnd()*(b-a+1))|0);
+  const cl = v => v<0?0 : v>255?255 : v|0;
+
+  function defaultLife(m){
+    if(m===FIRE)  return ri(30,80);
+    if(m===SMOKE) return ri(70,170);
+    if(m===STEAM) return ri(120,280);
+    if(m===SPARK) return ri(12,28);
+    return 0;
+  }
+  function spawn(i, m, lf){
+    grid[i]=m; clone[i]=0;
+    tint[i]=(rnd()*255)|0;
+    life[i]= (lf===undefined) ? defaultLife(m) : lf;
+  }
+  function move(a,b){
+    grid[b]=grid[a]; life[b]=life[a]; tint[b]=tint[a]; clone[b]=clone[a];
+    grid[a]=EMPTY; life[a]=0; clone[a]=0; moved[b]=1;
+  }
+  function swap(a,b){
+    const g=grid[a], l=life[a], t=tint[a], c=clone[a];
+    grid[a]=grid[b]; life[a]=life[b]; tint[a]=tint[b]; clone[a]=clone[b];
+    grid[b]=g; life[b]=l; tint[b]=t; clone[b]=c;
+    moved[a]=1; moved[b]=1;
+  }
+  // 0 = blocked, 1 = move into empty, 2 = swap with lighter fluid/gas
+  function canEnter(self, j){
+    const m=grid[j];
+    if(m===EMPTY) return 1;
+    const c=cat[m];
+    if((c===LIQ||c===GAS) && den[m] < den[self]) return 2;
+    return 0;
+  }
+  function tryStep(i, j, self){
+    const k=canEnter(self, j);
+    if(k===1){ move(i,j); return true; }
+    if(k===2){ swap(i,j); return true; }
+    return false;
+  }
+
+  /* ---------------------------------------------------------------- movement */
+  function updPowder(x,y,i,m){
+    if(y+1<H){
+      const b=i+W;
+      if(tryStep(i,b,m)) return true;
+      const dir = rnd()<0.5 ? 1 : -1;
+      if(x+dir>=0 && x+dir<W && tryStep(i,b+dir,m)) return true;
+      if(x-dir>=0 && x-dir<W && tryStep(i,b-dir,m)) return true;
+    }
+    return false;
+  }
+  function updLiquid(x,y,i,m,disp){
+    if(y+1<H){
+      const b=i+W;
+      if(tryStep(i,b,m)) return;
+      const dir = rnd()<0.5 ? 1 : -1;
+      if(x+dir>=0 && x+dir<W && tryStep(i,b+dir,m)) return;
+      if(x-dir>=0 && x-dir<W && tryStep(i,b-dir,m)) return;
+    }
+    // flow sideways, up to `disp` cells, whichever direction is open furthest
+    for(const dd of (rnd()<0.5 ? [1,-1] : [-1,1])){
+      let ci=i, cx=x, reach=null;
+      for(let s=0;s<disp;s++){
+        const nx=cx+dd; if(nx<0||nx>=W) break;
+        const nj=ci+dd;
+        if(canEnter(m,nj)){ ci=nj; cx=nx; reach=nj; } else break;
+      }
+      if(reach!==null){
+        if(canEnter(m,reach)===1) move(i,reach); else swap(i,reach);
+        return;
+      }
+    }
+  }
+  function updGas(x,y,i,m){
+    if(y-1>=0){
+      const a=i-W;
+      if(tryStep(i,a,m)) return;
+      const dir = rnd()<0.5 ? 1 : -1;
+      if(x+dir>=0 && x+dir<W && tryStep(i,a+dir,m)) return;
+      if(x-dir>=0 && x-dir<W && tryStep(i,a-dir,m)) return;
+    }
+    const dir = rnd()<0.5 ? 1 : -1;
+    if(x+dir>=0 && x+dir<W && tryStep(i,i+dir,m)) return;
+    if(x-dir>=0 && x-dir<W && tryStep(i,i-dir,m)) return;
+  }
+
+  /* ---------------------------------------------------------------- reactions */
+  // heat applied to a neighbour cell j at (jx,jy)
+  function applyHeat(jx,jy,j){
+    const m=grid[j];
+    if(ignite[m]>0){
+      if(rnd()<ignite[m]){ spawn(j,FIRE, burnLife[m]||60); moved[j]=1; }
+    } else if(m===GUNPOWDER){
+      explode(jx,jy,7);
+    } else if(m===ICE){
+      spawn(j,WATER); moved[j]=1;
+    } else if(m===WATER){
+      if(rnd()<0.03){ spawn(j,STEAM); moved[j]=1; }
+    }
+  }
+
+  function explode(cx,cy,r){
+    const r2=r*r;
+    for(let yy=cy-r; yy<=cy+r; yy++){
+      if(yy<0||yy>=H) continue;
+      for(let xx=cx-r; xx<=cx+r; xx++){
+        if(xx<0||xx>=W) continue;
+        const dx=xx-cx, dy=yy-cy, d2=dx*dx+dy*dy;
+        if(d2>r2) continue;
+        const j=yy*W+xx, m=grid[j];
+        if(m===WALL) continue;                         // walls are blast-proof
+        if(m===GUNPOWDER){ spawn(j,FIRE,ri(18,40)); moved[j]=1; continue; }
+        const d=Math.sqrt(d2);
+        if(d < r*0.5){ spawn(j,FIRE,ri(22,55)); }
+        else if(d < r*0.82){ spawn(j, rnd()<0.6 ? FIRE : (rnd()<0.5?SMOKE:EMPTY), ri(14,34)); }
+        else { spawn(j, rnd()<0.45 ? SMOKE : EMPTY); }
+        moved[j]=1;
+      }
+    }
+  }
+
+  const NB4 = [[0,-1],[0,1],[-1,0],[1,0]];
+
+  function updFire(x,y,i){
+    // doused by water
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      if(grid[ny*W+nx]===WATER){
+        if(rnd()<0.3) spawn(ny*W+nx, STEAM);
+        spawn(i, EMPTY); return;
+      }
+    }
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      applyHeat(nx,ny,ny*W+nx);
+    }
+    if(grid[i]!==FIRE) return;                          // a blast may have reclaimed us
+    if(--life[i] <= 0){
+      const r=rnd();
+      spawn(i, r<0.45 ? SMOKE : (r<0.5 ? ASH : EMPTY));
+      return;
+    }
+    updGas(x,y,i,FIRE);
+  }
+
+  function updSpark(x,y,i){
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      applyHeat(nx,ny,ny*W+nx);
+    }
+    if(grid[i]!==SPARK) return;
+    if(--life[i] <= 0){ spawn(i,EMPTY); return; }
+    updPowder(x,y,i,SPARK);
+  }
+
+  function updLava(x,y,i){
+    // water quenches lava into stone; ice melts first
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const j=ny*W+nx, m=grid[j];
+      if(m===WATER){ spawn(j,STEAM); spawn(i,STONE); return; }
+      if(m===ICE){ spawn(j,WATER); }
+    }
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const j=ny*W+nx, m=grid[j];
+      if(ignite[m]>0){ if(rnd()<ignite[m]*1.6) spawn(j,FIRE, burnLife[m]||60); }
+      else if(m===GUNPOWDER) explode(nx,ny,7);
+      else if(m===METAL){ if(rnd()<0.004) spawn(j,LAVA); }     // melts metal
+      else if(m===SAND){ if(rnd()<0.02) spawn(j,GLASS); }      // fuses sand to glass
+    }
+    if(grid[i]!==LAVA) return;
+    if(rnd()<0.004 && y>0 && grid[i-W]===EMPTY) spawn(i-W, SMOKE);
+    if((frame&1)===0) updLiquid(x,y,i,LAVA,1);                 // viscous
+  }
+
+  function updAcid(x,y,i){
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const j=ny*W+nx, m=grid[j];
+      if(corrode[m]>0 && rnd()<corrode[m]){
+        spawn(j,EMPTY);
+        if(rnd()<0.4){ spawn(i, rnd()<0.4 ? SMOKE : EMPTY); return; }  // acid spent
+        break;
+      }
+    }
+    if(grid[i]===ACID) updLiquid(x,y,i,ACID,4);
+  }
+
+  function updSalt(x,y,i){
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const j=ny*W+nx, m=grid[j];
+      if(m===WATER){ if(rnd()<0.08){ spawn(i,EMPTY); return; } }   // dissolves
+      else if(m===ICE){ if(rnd()<0.12){ spawn(j,WATER); spawn(i,EMPTY); return; } } // melts ice
+    }
+    updPowder(x,y,i,SALT);
+  }
+
+  function updSeed(x,y,i){
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      if(grid[ny*W+nx]===WATER && rnd()<0.2){ spawn(i,PLANT); return; }
+    }
+    updPowder(x,y,i,SEED);
+  }
+
+  function updPlant(x,y,i){
+    let wet=false;
+    const empties=[];
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const j=ny*W+nx, m=grid[j];
+      if(m===WATER) wet=true;
+      else if(m===EMPTY){ empties.push(j); if(dy<0) empties.push(j); } // bias upward
+    }
+    if(wet && empties.length && rnd()<0.05){
+      spawn(empties[(rnd()*empties.length)|0], PLANT);
+    }
+  }
+
+  function updCloner(x,y,i){
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const m=grid[ny*W+nx];
+      if(m!==EMPTY && m!==CLONER && cat[m]!==ST) clone[i]=m;       // learn a material
+    }
+    if(clone[i]){
+      for(const [dx,dy] of NB4){
+        const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+        const j=ny*W+nx;
+        if(grid[j]===EMPTY && rnd()<0.22){ spawn(j, clone[i]); moved[j]=1; }
+      }
+    }
+  }
+
+  function updSteam(x,y,i){
+    if(--life[i] <= 0){ spawn(i, rnd()<0.45 ? WATER : EMPTY); return; }
+    for(const [dx,dy] of NB4){
+      const nx=x+dx, ny=y+dy; if(nx<0||nx>=W||ny<0||ny>=H) continue;
+      const m=grid[ny*W+nx];
+      if((m===WATER||m===ICE) && rnd()<0.06){ spawn(i,WATER); return; }  // condenses on cold
+    }
+    updGas(x,y,i,STEAM);
+  }
+
+  /* ---------------------------------------------------------------- wind / fans */
+  function windPass(){
+    const DEC=0.86;
+    for(let k=0;k<N;k++){
+      let wx=windX[k]*DEC, wy=windY[k]*DEC;
+      if(wx<0.01 && wx>-0.01) wx=0;
+      if(wy<0.01 && wy>-0.01) wy=0;
+      windX[k]=wx; windY[k]=wy;
+    }
+    const RANGE=15, STR=1.25, JIT=0.55;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+      if(grid[y*W+x]!==FAN) continue;
+      for(let k=1;k<=RANGE;k++){
+        const ny=y-k; if(ny<0) break;
+        const j=ny*W+x, mm=grid[j];
+        if(mm===WALL||mm===FAN||mm===METAL||mm===STONE||mm===GLASS||mm===WOOD) break;
+        windY[j] -= STR*(1-(k-1)/RANGE);
+        windX[j] += (rnd()-0.5)*JIT;
+      }
+    }
+  }
+  function windMove(x,y,i,m){
+    const wx=windX[i], wy=windY[i], w=wgt[m]||1;
+    if(wy<0){
+      const p=Math.min(0.92,(-wy)/w);
+      if(rnd()<p && y>0){
+        if(tryStep(i,i-W,m)) return true;
+        const d=rnd()<0.5?1:-1;
+        if(x+d>=0 && x+d<W && tryStep(i,i-W+d,m)) return true;
+      }
+    } else if(wy>0){
+      const p=Math.min(0.92,wy/w);
+      if(rnd()<p && y<H-1 && tryStep(i,i+W,m)) return true;
+    }
+    if(wx!==0){
+      const p=Math.min(0.92,Math.abs(wx)/w);
+      if(rnd()<p){ const d=wx>0?1:-1; if(x+d>=0 && x+d<W && tryStep(i,i+d,m)) return true; }
+    }
+    return false;
+  }
+
+  /* ---------------------------------------------------------------- step */
+  function updateCell(x,y){
+    const i=y*W+x;
+    if(moved[i]) return;
+    const m=grid[i];
+    if(m===EMPTY||m===WALL) return;
+    const c=cat[m];
+    if((c===POW||c===LIQ||c===GAS) && (windX[i]||windY[i]) && windMove(x,y,i,m)) return;
+
+    switch(m){
+      case SAND: case ASH: case COAL: case GUNPOWDER: updPowder(x,y,i,m); break;
+      case SEED:  updSeed(x,y,i); break;
+      case SALT:  updSalt(x,y,i); break;
+      case WATER: updLiquid(x,y,i,WATER,5); break;
+      case OIL:   updLiquid(x,y,i,OIL,3); break;
+      case ACID:  updAcid(x,y,i); break;
+      case LAVA:  updLava(x,y,i); break;
+      case FIRE:  updFire(x,y,i); break;
+      case SPARK: updSpark(x,y,i); break;
+      case STEAM: updSteam(x,y,i); break;
+      case SMOKE: if(--life[i]<=0){ spawn(i,EMPTY); } else updGas(x,y,i,SMOKE); break;
+      case PLANT: updPlant(x,y,i); break;
+      case CLONER:updCloner(x,y,i); break;
+      default: break;   // WALL/STONE/WOOD/METAL/ICE/GLASS/FAN are inert on their own
+    }
+  }
+  function step(){
+    frame++;
+    moved.fill(0);
+    windPass();
+    ltr=!ltr;
+    for(let y=H-1;y>=0;y--){
+      if(ltr) for(let x=0;x<W;x++) updateCell(x,y);
+      else    for(let x=W-1;x>=0;x--) updateCell(x,y);
+    }
+  }
+
+  /* ---------------------------------------------------------------- render */
+  function render(){
+    const t=frame;
+    for(let i=0;i<N;i++){
+      const m=grid[i];
+      let r,g,b;
+      switch(m){
+        case EMPTY: r=13; g=16; b=22; break;
+        case FIRE: {
+          const h=Math.min(1, life[i]/80);
+          const f=((tint[i]+t*3)&15)-8;
+          r=cl(255+f); g=cl(110+h*130+f); b=cl(20+h*60); break;
+        }
+        case LAVA: {
+          const s=Math.sin(t*0.08 + tint[i])*0.5+0.5;
+          r=cl(195+s*60); g=cl(55+s*75); b=cl(18+s*10); break;
+        }
+        case SPARK: r=255; g=232; b=150; break;
+        case SMOKE: { const a=Math.max(0,Math.min(1,life[i]/150)); const v=cl(13+(74-13)*a); r=g=b=v; break; }
+        case STEAM: {
+          const a=Math.max(0,Math.min(1,life[i]/260));
+          r=cl(13+(198-13)*a); g=cl(16+(212-16)*a); b=cl(22+(226-22)*a); break;
+        }
+        case FAN: {
+          const y=(i/W)|0;
+          const band=((y - (t>>1)) & 7) < 2 ? 34 : 0;
+          r=cl(120+band); g=cl(132+band); b=cl(152+band); break;
+        }
+        default: {
+          const v=(((tint[i]&15)-8)*texf[m])|0;
+          r=cl(cr[m]+v); g=cl(cg[m]+v); b=cl(cb[m]+v);
+        }
+      }
+      off32[i] = (255<<24)|(b<<16)|(g<<8)|r;
+    }
+    offctx.putImageData(offimg,0,0);
+    ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(off, 0,0,W,H, 0,0, cvs.width, cvs.height);
+  }
+
+  /* ---------------------------------------------------------------- painting */
+  let down=false, erasing=false, lastGX=0, lastGY=0, haveLast=false;
+  function eventCell(e){
+    const r=cvs.getBoundingClientRect();
+    const gx=Math.floor((e.clientX-r.left)/r.width  * W);
+    const gy=Math.floor((e.clientY-r.top )/r.height * H);
+    return [gx,gy];
+  }
+  function paintDisc(gx,gy){
+    const what = erasing ? ERASE : selected;
+    const rB=brush, r2=rB*rB;
+    for(let dy=-rB;dy<=rB;dy++){
+      const y=gy+dy; if(y<0||y>=H) continue;
+      for(let dx=-rB;dx<=rB;dx++){
+        if(dx*dx+dy*dy>r2) continue;
+        const x=gx+dx; if(x<0||x>=W) continue;
+        const i=y*W+x;
+        if(what===ERASE){ if(grid[i]!==EMPTY) spawn(i,EMPTY); }
+        else if(grid[i]===EMPTY) spawn(i, what);   // additive: never clobbers existing matter
+      }
+    }
+  }
+  function paintLine(gx,gy){
+    if(haveLast){
+      const dx=gx-lastGX, dy=gy-lastGY;
+      const steps=Math.max(Math.abs(dx),Math.abs(dy));
+      for(let s=1;s<=steps;s++) paintDisc(lastGX+Math.round(dx*s/steps), lastGY+Math.round(dy*s/steps));
+    } else paintDisc(gx,gy);
+    lastGX=gx; lastGY=gy; haveLast=true;
+  }
+
+  cvs.addEventListener('pointerdown', e=>{
+    e.preventDefault(); cvs.setPointerCapture(e.pointerId);
+    down=true; erasing = (e.button===2) || (e.buttons&2)===2 || selected===ERASE;
+    haveLast=false;
+    const [gx,gy]=eventCell(e); paintLine(gx,gy);
+  });
+  cvs.addEventListener('pointermove', e=>{
+    if(!down) return; e.preventDefault();
+    const [gx,gy]=eventCell(e); paintLine(gx,gy);
+  });
+  function endStroke(){ down=false; haveLast=false; }
+  cvs.addEventListener('pointerup', endStroke);
+  cvs.addEventListener('pointercancel', endStroke);
+  cvs.addEventListener('pointerleave', ()=>{ haveLast=false; });
+  cvs.addEventListener('contextmenu', e=>e.preventDefault());
+  cvs.addEventListener('wheel', e=>{
+    e.preventDefault();
+    brush=Math.max(1,Math.min(22, brush + (e.deltaY<0?1:-1)));
+    brushEl.value=brush; brushVal.textContent=brush;
+  }, {passive:false});
+
+  /* ---------------------------------------------------------------- UI */
+  const palette = document.getElementById('palette');
+  function repColor(id){
+    if(id===ERASE) return '#0d1016';
+    if(id===FIRE)  return 'rgb(255,150,40)';
+    if(id===LAVA)  return 'rgb(225,90,25)';
+    return `rgb(${cr[id]},${cg[id]},${cb[id]})`;
+  }
+  const matButtons=[];
+  for(const [id,name] of PALETTE){
+    const btn=document.createElement('button');
+    btn.className='mat'; btn.dataset.id=id;
+    const dot=document.createElement('span'); dot.className='dot';
+    if(id===ERASE){ dot.style.background='repeating-conic-gradient(#444 0 25%, #222 0 50%) 50%/8px 8px'; }
+    else dot.style.background=repColor(id);
+    btn.appendChild(dot);
+    btn.appendChild(document.createTextNode(name));
+    btn.addEventListener('click', ()=>{ selected=id; sync(); });
+    palette.appendChild(btn); matButtons.push(btn);
+  }
+  function sync(){ for(const b of matButtons) b.classList.toggle('sel', +b.dataset.id===selected); }
+  sync();
+
+  const playBtn=document.getElementById('playBtn');
+  const clearBtn=document.getElementById('clearBtn');
+  const brushEl=document.getElementById('brush');
+  const brushVal=document.getElementById('brushVal');
+  const speedEl=document.getElementById('speed');
+  const speedVal=document.getElementById('speedVal');
+  playBtn.addEventListener('click', ()=>{ paused=!paused; playBtn.textContent = paused?'▶ Play':'⏸ Pause'; });
+  clearBtn.addEventListener('click', resetWorld);
+  brushEl.addEventListener('input', ()=>{ brush=+brushEl.value; brushVal.textContent=brush; });
+  speedEl.addEventListener('input', ()=>{ speed=+speedEl.value; speedVal.textContent=speed; });
+
+  window.addEventListener('keydown', e=>{
+    if(e.code==='Space'){ e.preventDefault(); playBtn.click(); }
+    else if(e.key==='c'||e.key==='C') resetWorld();
+    else if(e.key==='e'||e.key==='E'){ selected=ERASE; sync(); }
+    else if(e.key===']'){ brush=Math.min(22,brush+1); brushEl.value=brush; brushVal.textContent=brush; }
+    else if(e.key==='['){ brush=Math.max(1,brush-1); brushEl.value=brush; brushVal.textContent=brush; }
+  });
+
+  /* ---------------------------------------------------------------- world / demo */
+  function border(){
+    for(let x=0;x<W;x++){ grid[x]=WALL; grid[(H-1)*W+x]=WALL; }
+    for(let y=0;y<H;y++){ grid[y*W]=WALL; grid[y*W+W-1]=WALL; }
+  }
+  function fillRect(x0,y0,x1,y1,m){
+    for(let y=Math.max(1,y0);y<=Math.min(H-2,y1);y++)
+      for(let x=Math.max(1,x0);x<=Math.min(W-2,x1);x++) spawn(y*W+x,m);
+  }
+  function disc(cx,cy,r,m){
+    const r2=r*r;
+    for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++)
+      if(dx*dx+dy*dy<=r2){
+        const x=cx+dx, y=cy+dy;
+        if(x>0&&x<W-1&&y>0&&y<H-1) spawn(y*W+x,m);
+      }
+  }
+  function bowl(x0,x1,floorY,depth,liquid){
+    const topY=floorY-depth;
+    for(let y=topY;y<floorY;y++){ spawn(y*W+x0,STONE); spawn(y*W+x1,STONE); }
+    for(let y=topY+2;y<floorY;y++) for(let x=x0+1;x<x1;x++) spawn(y*W+x,liquid);
+  }
+  function tree(x,floorY,h){
+    for(let y=floorY-h;y<floorY;y++) spawn(y*W+x,WOOD);
+    disc(x,floorY-h,Math.max(3,(h*0.45)|0),PLANT);
+  }
+  function demoScene(){
+    const gx=v=>Math.round(v*W), gy=v=>Math.round(v*H);
+    const ground=gy(0.84);
+    fillRect(1,ground,W-2,H-2,STONE);                 // bedrock
+    disc(gx(0.20),ground-1,Math.max(5,gy(0.10)),SAND);// dunes
+    disc(gx(0.33),ground-1,Math.max(4,gy(0.07)),SAND);
+    tree(gx(0.46),ground,gy(0.18));                   // little forest
+    tree(gx(0.53),ground,gy(0.14));
+    disc(gx(0.40),ground-1,3,GUNPOWDER);              // something to ignite
+    bowl(gx(0.60),gx(0.80),ground,gy(0.16),WATER);    // pond
+    bowl(gx(0.87),gx(0.96),ground,gy(0.11),LAVA);     // lava pocket (kept apart)
+    fillRect(gx(0.05),ground-gy(0.11),gx(0.05)+3,ground-1,ICE); // ice block
+  }
+  function resetWorld(){
+    grid.fill(EMPTY); life.fill(0); tint.fill(0); clone.fill(0);
+    windX.fill(0); windY.fill(0);
+    border();
+  }
+
+  /* ---------------------------------------------------------------- sizing */
+  let prevW=-1, prevH=-1, seeded=false;
+  function resize(){
+    const r=stage.getBoundingClientRect();
+    const cssW=Math.max(64,r.width), cssH=Math.max(64,r.height);
+    const dpr=Math.max(1,Math.min(2, window.devicePixelRatio||1));
+    cvs.width=Math.floor(cssW*dpr);
+    cvs.height=Math.floor(cssH*dpr);
+    const nW=Math.max(48,Math.floor(cssW/CELL));
+    const nH=Math.max(36,Math.floor(cssH/CELL));
+    if(nW===prevW && nH===prevH) return;              // backing store changed only
+    prevW=nW; prevH=nH;
+    W=nW; H=nH; N=W*H;
+    grid=new Uint8Array(N); life=new Int16Array(N); tint=new Uint8Array(N);
+    clone=new Uint8Array(N); moved=new Uint8Array(N);
+    windX=new Float32Array(N); windY=new Float32Array(N);
+    off=document.createElement('canvas'); off.width=W; off.height=H;
+    offctx=off.getContext('2d');
+    offimg=offctx.createImageData(W,H);
+    off32=new Uint32Array(offimg.data.buffer);
+    border();
+    if(!seeded){ demoScene(); seeded=true; }
+  }
+  if(window.ResizeObserver){
+    let raf=0;
+    new ResizeObserver(()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(resize); }).observe(stage);
+  } else window.addEventListener('resize', resize);
+  resize();
+
+  /* ---------------------------------------------------------------- loop */
+  function loop(){
+    if(down) paintDisc(lastGX,lastGY);                // faucet: keep emitting while held
+    if(!paused) for(let s=0;s<speed;s++) step();
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

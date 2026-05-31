@@ -227,11 +227,15 @@ td {
 
   // The Doodles entry stands in for a whole collection, so its media box is a
   // 2x2 mosaic of member thumbnails rather than a single screenshot. Explicit
-  // rows split whatever height the box has so the tiles fill it evenly.
+  // rows split whatever height the box has so the tiles fill it evenly. The
+  // images are replaced elements with `min-height: auto`, so the `1fr` tracks
+  // can blow out taller than the box; `align-content: center` keeps the overflow
+  // symmetric (equal crop top and bottom) instead of clipping only the bottom.
   .thumb.doodle-thumbs {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: 1fr 1fr;
+    align-content: center;
     gap: 3px;
 
     img {

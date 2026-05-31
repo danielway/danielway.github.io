@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Traffic Flow — Emergent Congestion</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: rgba(18, 24, 33, 0.84);
+    --panel-solid: #121821;
+    --ink: #e9eef6;
+    --muted: #93a1b5;
+    --line: rgba(150, 175, 210, 0.16);
+    --accent: #5fd0c8;
+    --warn: #f0b24a;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; width: 100%;
+    background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; -webkit-font-smoothing: antialiased;
+    user-select: none; -webkit-user-select: none;
+  }
+  #app { position: fixed; inset: 0; display: flex; flex-direction: column; }
+
+  #bar {
+    flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 8px 10px; background: var(--panel-solid);
+    border-bottom: 1px solid var(--line); z-index: 5;
+  }
+  .group { display: flex; align-items: center; gap: 5px; }
+  .group + .group { border-left: 1px solid var(--line); padding-left: 10px; }
+  .sep { flex: 1 1 auto; }
+
+  button.tool, button.act {
+    appearance: none; cursor: pointer; color: var(--ink);
+    background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+    border-radius: 9px; padding: 7px 11px; font-size: 13px; line-height: 1;
+    display: inline-flex; align-items: center; gap: 6px; transition: .12s;
+    white-space: nowrap;
+  }
+  button.tool:hover, button.act:hover { background: rgba(255,255,255,0.10); }
+  button.tool.on {
+    background: rgba(95,208,200,0.18); border-color: var(--accent); color: #fff;
+    box-shadow: 0 0 0 1px rgba(95,208,200,0.35) inset;
+  }
+  button .ico { font-size: 15px; }
+  button.act.primary { background: rgba(95,208,200,0.16); border-color: rgba(95,208,200,0.45); }
+
+  label.slider {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted);
+    white-space: nowrap;
+  }
+  label.slider input[type=range] { width: 82px; accent-color: var(--accent); cursor: pointer; }
+  label.chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  label.chk input { accent-color: var(--accent); cursor: pointer; }
+
+  #stage { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; cursor: crosshair; }
+  canvas#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  #hud {
+    position: absolute; left: 12px; top: 12px; z-index: 4;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; backdrop-filter: blur(6px); min-width: 188px;
+    pointer-events: none;
+  }
+  #hud h2 { margin: 0 0 7px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 700; display:flex; justify-content:space-between; align-items:center; gap:10px;}
+  #hud h2 .clock { color: var(--ink); font-weight: 700; letter-spacing: .02em; text-transform:none; font-variant-numeric: tabular-nums;}
+  .stat { display: flex; justify-content: space-between; gap: 14px; font-size: 13px; margin: 3px 0; font-variant-numeric: tabular-nums; }
+  .stat b { font-weight: 600; color: var(--muted); }
+  .stat .v { color: #fff; }
+  #bars { margin-top: 8px; }
+  .meter { height: 7px; border-radius: 4px; background: rgba(255,255,255,.08); overflow: hidden; margin: 4px 0 2px; }
+  .meter > span { display:block; height: 100%; width: 0%; transition: width .25s, background .25s; }
+  .meterlab { display:flex; justify-content:space-between; font-size: 10.5px; color: var(--muted); letter-spacing:.04em; text-transform:uppercase;}
+  #spark { display: block; margin-top: 9px; border-radius: 6px; background: rgba(0,0,0,0.25); width: 188px; height: 36px; }
+
+  #legend {
+    position: absolute; right: 12px; top: 12px; z-index: 4;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 9px 11px; backdrop-filter: blur(6px); font-size: 12px; color: var(--muted);
+    pointer-events: none; max-width: 200px;
+  }
+  #legend .row { display: flex; align-items: center; gap: 7px; margin: 3px 0; }
+  #legend .dot { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+
+  #hint {
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 4;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+    padding: 7px 15px; font-size: 12.5px; color: var(--muted); backdrop-filter: blur(6px);
+    pointer-events: none; transition: opacity .5s; text-align: center; max-width: 92%;
+  }
+  #hint b { color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 760px) {
+    label.slider { display: none; }
+    #legend { display: none; }
+    button.act .txt { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <div class="group" id="tools">
+      <button class="tool on" data-tool="inspect" title="Hover roads & junctions for details"><span class="ico">🔍</span>Inspect</button>
+      <button class="tool" data-tool="incident" title="Click a road to stall a car and trigger a jam"><span class="ico">🚧</span>Incident</button>
+      <button class="tool" data-tool="signal" title="Click a junction to cycle its control type"><span class="ico">🚦</span>Junction</button>
+    </div>
+
+    <div class="group">
+      <button class="act primary" id="play"><span class="ico">⏸</span><span class="txt">Pause</span></button>
+      <button class="act" id="regen"><span class="ico">🗺️</span><span class="txt">New map</span></button>
+    </div>
+
+    <div class="group">
+      <label class="slider" title="Simulation speed">Sim
+        <input type="range" id="simspeed" min="20" max="320" value="100">
+      </label>
+      <label class="slider" title="How fast the clock runs">Clock
+        <input type="range" id="clockspeed" min="0" max="240" value="100">
+      </label>
+      <label class="slider" title="Override traffic demand (Auto follows rush hours)">Demand
+        <input type="range" id="demand" min="0" max="200" value="100">
+      </label>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="group">
+      <label class="chk"><input type="checkbox" id="autodemand" checked> rush hours</label>
+      <label class="chk"><input type="checkbox" id="shownight" checked> day / night</label>
+      <label class="chk"><input type="checkbox" id="showlabels"> labels</label>
+    </div>
+  </div>
+
+  <div id="stage">
+    <canvas id="cv"></canvas>
+
+    <div id="hud">
+      <h2>Network <span class="clock" id="clock">—</span></h2>
+      <div class="stat"><b id="phaseLab">Daytime</b><span class="v" id="vehLab">0 cars</span></div>
+      <div id="bars">
+        <div class="meterlab"><span>Flow</span><span id="flowPct">—</span></div>
+        <div class="meter"><span id="flowBar" style="background:var(--accent)"></span></div>
+        <div class="meterlab"><span>Congestion</span><span id="congPct">—</span></div>
+        <div class="meter"><span id="congBar" style="background:var(--warn)"></span></div>
+      </div>
+      <canvas id="spark" width="188" height="36"></canvas>
+    </div>
+
+    <div id="legend">
+      <div class="row"><b style="color:var(--ink);font-weight:600">Junctions</b></div>
+      <div class="row"><span class="dot" style="background:#e85d5d"></span> Traffic light</div>
+      <div class="row"><span class="dot" style="background:#e0a030"></span> Stop sign</div>
+      <div class="row"><span class="dot" style="background:#5fbf6a"></span> Yield</div>
+      <div class="row"><span class="dot" style="background:#7aa6e8"></span> Roundabout</div>
+      <div class="row" style="margin-top:6px"><b style="color:var(--ink);font-weight:600">Cars</b></div>
+      <div class="row"><span class="dot" style="background:#46c6f0"></span> cruising</div>
+      <div class="row"><span class="dot" style="background:#f0b24a"></span> slowing</div>
+      <div class="row"><span class="dot" style="background:#e85d5d"></span> stopped</div>
+    </div>
+
+    <div id="hint">A city wakes up. Watch <b>rush hours</b> clog the arterials, then drop an <b>🚧 incident</b> on a road to watch a jam ripple backward.</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  // ============================================================ canvas setup
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d", { alpha: false });
+  const stage = document.getElementById("stage");
+  const roadCan = document.createElement("canvas");   // cached static road layer
+  const roadCtx = roadCan.getContext("2d");
+  const spark = document.getElementById("spark");
+  const sctx = spark.getContext("2d");
+
+  let DPR = Math.min(2, window.devicePixelRatio || 1);
+  let W = 0, H = 0;
+
+  // ============================================================ tunables
+  const LANE_W = 8.6;            // px per lane
+  const CAR_L = 12, CAR_W = 6.2; // car footprint
+  const IDM = {
+    a: 46,        // max accel px/s^2
+    b: 60,        // comfortable decel
+    s0: 4.5,      // min jam gap
+    T: 1.25,      // safe time headway s
+    delta: 4
+  };
+  const SIGHT = 130;             // how far ahead a car looks downstream past its lane end
+  const TAU_YIELD = 2.6;         // s gap required to accept at a yield/permissive turn
+  const STUCK_T = 11;            // s of near-standstill before a car is granted desperation priority
+  const VANISH_T = 26;           // s fully stuck before a car is recycled to break a deadlock
+  const COMMIT_DIST = 7;         // px from stop line at which a permitted car locks its crossing
+
+  // global runtime
+  let net = null;                // {nodes, links, lanes, conns, portals}
+  let cars = [];
+  let running = true;
+  let clock = 8.0;               // hours [0,24)
+  let lastT = 0, spawnAcc = 0, idSeq = 1;
+  let hoverInfo = null, mouse = {x:0,y:0,in:false};
+  let tool = "inspect";
+  let throughput = 0;            // cars that completed a trip this window
+  const histLen = 188; const congHist = new Float32Array(histLen); let histHead = 0;
+  let avgSpeedSmoothed = 0;
+
+  // UI elements
+  const el = (id)=>document.getElementById(id);
+  const ui = {
+    play: el("play"), regen: el("regen"),
+    simspeed: el("simspeed"), clockspeed: el("clockspeed"), demand: el("demand"),
+    autodemand: el("autodemand"), shownight: el("shownight"), showlabels: el("showlabels"),
+    clock: el("clock"), phaseLab: el("phaseLab"), vehLab: el("vehLab"),
+    flowBar: el("flowBar"), congBar: el("congBar"), flowPct: el("flowPct"), congPct: el("congPct"),
+    hint: el("hint")
+  };
+
+  // ============================================================ small math
+  const TAU = Math.PI * 2;
+  const clamp = (v,a,b)=> v<a?a : v>b?b : v;
+  const lerp = (a,b,t)=> a + (b-a)*t;
+  function sub(a,b){return {x:a.x-b.x, y:a.y-b.y};}
+  function add(a,b){return {x:a.x+b.x, y:a.y+b.y};}
+  function mul(a,s){return {x:a.x*s, y:a.y*s};}
+  function len(a){return Math.hypot(a.x,a.y);}
+  function norm(a){const l=len(a)||1; return {x:a.x/l, y:a.y/l};}
+  function dot(a,b){return a.x*b.x + a.y*b.y;}
+  function cross(a,b){return a.x*b.y - a.y*b.x;}
+  // deterministic-ish PRNG so a "map" is reproducible within a session
+  let seed = 1;
+  function rng(){ seed = (seed*1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  function rint(n){ return Math.floor(rng()*n); }
+  function pick(arr){ return arr[rint(arr.length)]; }
+
+  // segment intersection (proper crossing), returns true if segments AB and CD cross
+  function segCross(a,b,c,d){
+    const d1 = cross(sub(b,a), sub(c,a));
+    const d2 = cross(sub(b,a), sub(d,a));
+    const d3 = cross(sub(d,c), sub(a,c));
+    const d4 = cross(sub(d,c), sub(b,c));
+    if (((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0))) return true;
+    return false;
+  }
+
+  // ============================================================ Lane (polyline)
+  // Every drivable strip — road lanes, intersection connectors, roundabout arcs — is a Lane.
+  function makeLane(pts, kind, v0){
+    const seglen = [], cum = [0];
+    let total = 0;
+    for (let i=0;i<pts.length-1;i++){
+      const dx = pts[i+1].x-pts[i].x, dy = pts[i+1].y-pts[i].y;
+      const l = Math.hypot(dx,dy); seglen.push(l); total += l; cum.push(total);
+    }
+    return {
+      pts, seglen, cum, length: total, kind, v0,
+      cars: [],            // occupants, kept sorted ascending by pos each tick
+      link: null, laneIndex: 0, node: null,
+      conn: null,          // for road lanes: not used; for connectors holds movement meta
+    };
+  }
+  function lanePoint(lane, s){
+    s = clamp(s, 0, lane.length);
+    const cum = lane.cum, pts = lane.pts;
+    let i = 0;
+    while (i < lane.seglen.length-1 && cum[i+1] < s) i++;
+    const segL = lane.seglen[i] || 1;
+    const t = clamp((s - cum[i]) / segL, 0, 1);
+    const p0 = pts[i], p1 = pts[i+1];
+    const x = lerp(p0.x,p1.x,t), y = lerp(p0.y,p1.y,t);
+    const dx = (p1.x-p0.x)/segL, dy = (p1.y-p0.y)/segL;
+    return {x,y,dx,dy};
+  }
+
+  // ============================================================ network generation
+  function generate(){
+    cars = []; idSeq = 1; throughput = 0; congHist.fill(0); histHead = 0;
+    const margin = 70;
+    const gw = W - margin*2, gh = H - margin*2;
+    let cols = clamp(Math.round(W/210), 3, 7);
+    let rows = clamp(Math.round(H/210), 3, 6);
+    const sx = gw/(cols-1), sy = gh/(rows-1);
+
+    // ---- nodes on a jittered grid
+    const grid = [];
+    const nodes = [];
+    for (let r=0;r<rows;r++){
+      grid[r] = [];
+      for (let c=0;c<cols;c++){
+        const edge = (r===0||c===0||r===rows-1||c===cols-1);
+        const jx = edge ? 0 : (rng()-0.5)*sx*0.34;
+        const jy = edge ? 0 : (rng()-0.5)*sy*0.34;
+        const n = {
+          id: nodes.length, r, c,
+          x: margin + c*sx + jx, y: margin + r*sy + jy,
+          links: [], incoming: [],          // directed links out / in
+          conns: [],                          // connectors owned by this node
+          boundary: edge,
+          control: "through", signal: null, stopQ: [], commits: new Map(),
+          radius: 14,
+          roundabout: null
+        };
+        grid[r][c] = n; nodes.push(n);
+      }
+    }
+
+    // ---- road classes: alternating arterials make a hierarchy
+    const arterialCol = (c)=> (c % 2 === 0);
+    const arterialRow = (r)=> (r % 2 === 0);
+
+    // ---- candidate edges (grid adjacency); drop some while keeping connectivity
+    const roads = [];
+    const edges = [];
+    for (let r=0;r<rows;r++) for (let c=0;c<cols;c++){
+      if (c<cols-1) edges.push([grid[r][c], grid[r][c+1], "h", r, c]);
+      if (r<rows-1) edges.push([grid[r][c], grid[r+1][c], "v", r, c]);
+    }
+    // randomly try to remove ~22% of edges, keeping graph connected
+    const present = new Set(edges.map((_,i)=>i));
+    const adj = ()=> {
+      const m = new Map(); nodes.forEach(n=>m.set(n.id,[]));
+      edges.forEach((e,i)=>{ if(present.has(i)){ m.get(e[0].id).push(e[1].id); m.get(e[1].id).push(e[0].id);} });
+      return m;
+    };
+    const connected = (m)=>{
+      const seen = new Set([nodes[0].id]); const st=[nodes[0].id];
+      while(st.length){ const u=st.pop(); for(const v of m.get(u)) if(!seen.has(v)){seen.add(v);st.push(v);} }
+      return seen.size === nodes.length;
+    };
+    const order = edges.map((_,i)=>i);
+    for (let i=order.length-1;i>0;i--){ const j=rint(i+1); [order[i],order[j]]=[order[j],order[i]]; }
+    let removeBudget = Math.floor(edges.length*0.22);
+    for (const i of order){
+      if (removeBudget<=0) break;
+      present.delete(i);
+      if (!connected(adj())) present.add(i); else removeBudget--;
+    }
+
+    // ---- build roads (undirected) + directed links
+    const links = [];
+    function makeLink(from, to, road){
+      const d = norm(sub(to,from));
+      const lk = {
+        id: links.length, from, to, road, dir: d,
+        // left normal (canvas y down): rotate dir by +90deg
+        nrm: { x: -d.y, y: d.x },
+        lanesN: road.lanes, speed: road.speed, lanes: [], length: len(sub(to,from)),
+      };
+      from.links.push(lk); to.incoming.push(lk);
+      links.push(lk);
+      return lk;
+    }
+    for (const i of present){
+      const [a,b,dir,r,c] = edges[i];
+      const arterial = (dir==="h") ? arterialRow(r) : arterialCol(c);
+      const lanes = arterial ? 2 : 1;
+      const speed = arterial ? (74 + rng()*10) : (48 + rng()*8);
+      const road = { a, b, dir, arterial, lanes, speed };
+      roads.push(road);
+      road.fwd = makeLink(a,b,road);
+      road.rev = makeLink(b,a,road);
+    }
+
+    // remove orphan nodes (degree 0) from active set but keep array indices fine
+    nodes.forEach(n=>{ n.degree = n.links.length; });
+
+    // ---- node radius from incident road widths
+    nodes.forEach(n=>{
+      let maxLanes = 1;
+      n.links.forEach(l=> maxLanes = Math.max(maxLanes, l.lanesN));
+      n.incoming.forEach(l=> maxLanes = Math.max(maxLanes, l.lanesN));
+      n.radius = 10 + maxLanes*LANE_W*0.95;
+    });
+
+    // ---- build road lanes (offset to the right side of travel)
+    const lanes = [];
+    links.forEach(lk=>{
+      const from = lk.from, to = lk.to, d = lk.dir, nl = lk.nrm;
+      const rN = lk.lanesN;
+      const startGap = from.radius, endGap = to.radius;
+      const aP = add(from, mul(d, startGap));
+      const bP = add(to, mul(d, -endGap));
+      if (len(sub(bP,aP)) < 12){ // junctions almost touching; give a sliver
+        const mid = mul(add(aP,bP),0.5); /* keep tiny */
+      }
+      lk.lanes = [];
+      for (let i=0;i<rN;i++){
+        // right side of centerline = -nl ; lane i centered at (i+0.5) lane widths from centerline
+        const off = -((i+0.5)*LANE_W);
+        const p0 = add(aP, mul(nl, off));
+        const p1 = add(bP, mul(nl, off));
+        const lane = makeLane([p0,p1], "road", lk.speed);
+        lane.link = lk; lane.laneIndex = i; lane.node = to; // approach node = to
+        lk.lanes.push(lane); lanes.push(lane);
+      }
+    });
+
+    net = { nodes, links, roads, lanes, conns: [], grid, cols, rows };
+
+    // ---- classify junctions + build connectors
+    nodes.forEach(n=> classifyNode(n));
+    nodes.forEach(n=> buildConnectors(n));
+    nodes.forEach(n=> buildConflicts(n));
+    nodes.forEach(n=> buildControl(n));
+
+    // ---- portals (where cars are born / leave)
+    net.portals = nodes.filter(n=> n.boundary && n.links.length>0);
+
+    buildRoadLayer();
+  }
+
+  function turnType(inLink, outLink){
+    // angle from incoming dir to outgoing dir
+    const a = inLink.dir, b = outLink.dir;
+    const c = cross(a,b);                // canvas y-down: c>0 -> turning clockwise on screen = right
+    const d = dot(a,b);
+    if (outLink.to === inLink.from) return "uturn";
+    if (d > 0.72) return "through";
+    return (c > 0) ? "right" : "left";
+  }
+
+  function classifyNode(n){
+    const deg = n.links.length;
+    if (deg <= 1){ n.kind = "end"; return; }
+    if (deg === 2){ n.kind = "bend"; return; }
+    n.kind = "junction";
+    // measure arterial-ness of the crossing roads
+    const arterials = new Set();
+    let anyArterial = false, allArterial = true;
+    n.links.forEach(l=>{ if (l.road.arterial){ anyArterial=true; arterials.add(l.road);} else allArterial=false; });
+    n.arterialMix = { anyArterial, allArterial, count: arterials.size };
+  }
+
+  function buildConnectors(n){
+    if (n.kind === "end") return;
+    const conns = [];
+    // For each incoming link, for each outgoing link, build movement connectors.
+    n.incoming.forEach(il=>{
+      n.links.forEach(ol=>{
+        if (ol.to === il.from && n.links.length>2) return;   // no U-turn except at dead ends
+        if (ol === il) return;
+        const turn = turnType(il, ol);
+        if (turn === "uturn" && n.links.length>2) return;
+        // choose source & dest lane indices by turn
+        const sN = il.lanesN, dN = ol.lanesN;
+        const srcLanes = [];
+        if (turn === "left") srcLanes.push(sN-1);
+        else if (turn === "right") srcLanes.push(0);
+        else { // through: keep every lane flowing (one connector per lane)
+          for (let i=0;i<sN;i++) srcLanes.push(i);
+        }
+        srcLanes.forEach(si=>{
+          let di;
+          if (turn === "left") di = dN-1;
+          else if (turn === "right") di = 0;
+          else di = Math.min(si, dN-1);
+          const fromLane = il.lanes[si], toLane = ol.lanes[di];
+          if (!fromLane || !toLane) return;
+          const c = makeConnector(n, il, ol, fromLane, toLane, turn);
+          if (c) conns.push(c);
+        });
+      });
+    });
+    n.conns = conns;
+    net.conns.push(...conns);
+  }
+
+  function makeConnector(node, il, ol, fromLane, toLane, turn){
+    const p0 = fromLane.pts[fromLane.pts.length-1];
+    const t0 = il.dir;
+    const p3 = toLane.pts[0];
+    const t1 = ol.dir;
+    // control point = intersection of the two tangent lines, fallback to midpoint
+    let cp;
+    const denom = cross(t0, t1);
+    if (Math.abs(denom) > 1e-3){
+      // p0 + t0*s = p3 - t1*u  -> solve s
+      const diff = sub(p3, p0);
+      const s = cross(diff, t1) / denom;
+      cp = add(p0, mul(t0, s));
+      // keep control point sane
+      if (!isFinite(cp.x) || !isFinite(cp.y) || len(sub(cp,p0)) > node.radius*4)
+        cp = mul(add(p0,p3),0.5);
+    } else cp = mul(add(p0,p3),0.5);
+    // sample quadratic bezier
+    const pts = [];
+    const N = 9;
+    for (let i=0;i<=N;i++){
+      const t = i/N, mt = 1-t;
+      pts.push({
+        x: mt*mt*p0.x + 2*mt*t*cp.x + t*t*p3.x,
+        y: mt*mt*p0.y + 2*mt*t*cp.y + t*t*p3.y
+      });
+    }
+    // turn speed limit from curvature (length vs chord)
+    const chord = len(sub(p3,p0)) || 1;
+    let lane = makeLane(pts, "conn", il.speed);
+    const curveK = lane.length / chord;       // 1 = straight
+    let v0 = il.speed;
+    if (turn === "left") v0 = Math.min(v0, 24);
+    else if (turn === "right") v0 = Math.min(v0, 20);
+    else v0 = Math.min(v0, 30 + (2-curveK)*30);
+    lane.v0 = Math.max(14, v0);
+    lane.kind = "conn"; lane.node = node; lane.inLink = il; lane.outLink = ol;
+    lane.fromLane = fromLane; lane.toLane = toLane; lane.turn = turn;
+    lane.yieldType = "none";
+    return lane;
+  }
+
+  function buildConflicts(n){
+    const cs = n.conns;
+    for (const c of cs){ c.conflicts = []; }
+    for (let i=0;i<cs.length;i++){
+      for (let j=i+1;j<cs.length;j++){
+        const A = cs[i], B = cs[j];
+        if (A.fromLane === B.fromLane) continue;     // same source — diverge, never conflict
+        let crossed = (A.toLane === B.toLane);       // merge into same lane = conflict
+        if (!crossed){
+          outer:
+          for (let a=0;a<A.pts.length-1;a++)
+            for (let b=0;b<B.pts.length-1;b++)
+              if (segCross(A.pts[a],A.pts[a+1],B.pts[b],B.pts[b+1])){ crossed=true; break outer; }
+        }
+        if (crossed){ A.conflicts.push(B); B.conflicts.push(A); }
+      }
+    }
+  }
+
+  // ---- control assignment ----------------------------------------------------
+  function buildControl(n){
+    n.signal = null; n.roundabout = null; n.stopQ = []; n.commits = new Map();
+    if (n.kind === "end"){ n.control = "end"; return; }
+    if (n.kind === "bend"){ n.control = "through"; return; }
+
+    const deg = n.links.length;
+    const mix = n.arterialMix;
+    let type;
+    const roll = rng();
+    if (deg >= 4 && mix.allArterial){
+      type = roll < 0.22 ? "roundabout" : "light";
+    } else if (deg >= 3 && mix.anyArterial){
+      type = roll < 0.14 ? "roundabout" : (roll < 0.62 ? "light" : "twoway");
+    } else {
+      type = roll < 0.12 ? "roundabout" : (roll < 0.30 ? "twoway" : "allway");
+    }
+    setControl(n, type);
+  }
+
+  function setControl(n, type){
+    const wasRoundabout = !!n.roundabout;     // capture BEFORE we clear it
+    n.control = type;
+    n.signal = null; n.stopQ = []; n.commits = new Map();
+    // a roundabout owns custom ring/entry/exit lanes — rebuild direct connectors when leaving it
+    if (type === "roundabout"){ buildRoundabout(n); return; }
+    if (wasRoundabout) rebuildDirectConnectors(n);   // also sets n.roundabout = null
+    n.roundabout = null;
+
+    if (type === "light"){
+      // protected lefts only on arterial-heavy junctions with multi-lane approaches
+      const turnLanes = n.links.some(l=>l.lanesN>=2) && n.arterialMix && n.arterialMix.count>=1;
+      n.turnLanes = turnLanes;
+      n.conns.forEach(c=>{
+        c.yieldType = (c.turn === "left" && !turnLanes) ? "permissiveLeft" : "none";
+      });
+      buildSignal(n, turnLanes);
+    } else if (type === "allway"){
+      n.conns.forEach(c=> c.yieldType = "stop");
+    } else if (type === "twoway"){
+      // minor approaches stop; major approaches free, but their lefts yield to oncoming
+      n.conns.forEach(c=>{
+        const major = c.inLink.road.arterial;
+        if (!major) c.yieldType = "stop";
+        else c.yieldType = (c.turn === "left") ? "yield" : "none";
+      });
+    } else { // through (deg2) — shouldn't have conflicts
+      n.conns.forEach(c=> c.yieldType = "none");
+    }
+  }
+
+  function rebuildDirectConnectors(n){
+    // regenerate straight-through connectors (used when leaving roundabout mode)
+    net.conns = net.conns.filter(c=> c.node !== n);
+    n.conns = [];
+    buildConnectors(n);
+    buildConflicts(n);
+    n.roundabout = null;
+  }
+
+  // ---- signals ---------------------------------------------------------------
+  function buildSignal(n, turnLanes){
+    // group movements into phases by axis
+    // axis key = rounded undirected heading of the incoming link
+    const byAxis = new Map();
+    n.conns.forEach(c=>{
+      let ang = Math.atan2(c.inLink.dir.y, c.inLink.dir.x);
+      let a = ((ang % Math.PI) + Math.PI) % Math.PI;   // fold to [0,PI)
+      const key = Math.round(a / (Math.PI/6));          // 30° buckets, folded
+      if (!byAxis.has(key)) byAxis.set(key, []);
+      byAxis.get(key).push(c);
+    });
+    const phases = [];
+    for (const [,group] of byAxis){
+      const throughRight = group.filter(c=> c.turn==="through" || c.turn==="right" || c.turn==="uturn");
+      const lefts = group.filter(c=> c.turn==="left");
+      if (turnLanes){
+        if (throughRight.length) phases.push({ greens: throughRight.concat(group.filter(c=>c.turn==="right")), kind:"through" });
+        if (lefts.length) phases.push({ greens: lefts, kind:"left" });
+      } else {
+        // permissive: everything on this axis greens together; lefts yield
+        phases.push({ greens: group.slice(), kind:"through" });
+      }
+    }
+    if (!phases.length){ n.control = "allway"; n.conns.forEach(c=>c.yieldType="stop"); return; }
+    // dedupe greens arrays
+    phases.forEach(p=> p.greens = Array.from(new Set(p.greens)));
+    n.signal = {
+      phases, idx: 0, stage: "green",
+      t: 0,
+      greenDur: turnLanes ? 7.0 : 8.5,
+      leftDur: 4.0, yellow: 1.6, allred: 1.1,
+      offset: rng()*4
+    };
+    n.signal.t = n.signal.offset;
+    applySignalGreens(n);
+  }
+  function applySignalGreens(n){
+    const sig = n.signal; if (!sig) return;
+    const greenSet = new Set();
+    if (sig.stage === "green") sig.phases[sig.idx].greens.forEach(c=> greenSet.add(c));
+    n.conns.forEach(c=> c.green = greenSet.has(c));
+    n.conns.forEach(c=> c.yellow = (sig.stage==="yellow" && sig.phases[sig.idx].greens.includes(c)));
+  }
+  function updateSignal(n, dt){
+    const sig = n.signal; if (!sig) return;
+    sig.t += dt;
+    const ph = sig.phases[sig.idx];
+    const greenDur = ph.kind === "left" ? sig.leftDur : sig.greenDur;
+    let need;
+    if (sig.stage === "green") need = greenDur;
+    else if (sig.stage === "yellow") need = sig.yellow;
+    else need = sig.allred;
+    if (sig.t >= need){
+      sig.t = 0;
+      if (sig.stage === "green") sig.stage = "yellow";
+      else if (sig.stage === "yellow") sig.stage = "allred";
+      else { sig.stage = "green"; sig.idx = (sig.idx+1) % sig.phases.length; }
+      applySignalGreens(n);
+    }
+  }
+
+  // ---- roundabouts -----------------------------------------------------------
+  function buildRoundabout(n){
+    // remove this node's direct connectors; build a circulating ring with entries/exits
+    net.conns = net.conns.filter(c=> c.node !== n);
+    n.conns = [];
+    const R = Math.max(n.radius*0.92, 20);
+    n.roundabout = { R, ringLanes: [], entries: [], exits: [] };
+    // order approaches by angle around the node
+    const approaches = n.links.map(ol=>{
+      const ang = Math.atan2(ol.dir.y, ol.dir.x);
+      return { ol, ang, il: n.incoming.find(l=> l.road===ol.road) };
+    }).sort((a,b)=> a.ang - b.ang);
+    const m = approaches.length;
+    if (m < 2){ setControl(n, "through"); return; }
+    // ring node points: place a ring contact angle for each approach (pointing outward)
+    approaches.forEach(ap=>{
+      // contact angle = direction from center to the road, ~ -ol.dir
+      ap.contact = Math.atan2(-ap.ol.dir.y, -ap.ol.dir.x);
+    });
+    approaches.sort((a,b)=> a.contact - b.contact);
+    // build ring arcs between consecutive contact angles (counter-clockwise travel: angle increasing in canvas? choose CCW visually)
+    function ringPt(theta){ return { x: n.x + Math.cos(theta)*R, y: n.y + Math.sin(theta)*R }; }
+    const ringLanes = [];
+    for (let i=0;i<m;i++){
+      const a0 = approaches[i].contact;
+      let a1 = approaches[(i+1)%m].contact;
+      if (a1 <= a0) a1 += TAU;
+      const steps = Math.max(4, Math.round((a1-a0)/0.3));
+      const pts = [];
+      for (let s=0;s<=steps;s++){ const t = a0 + (a1-a0)*s/steps; pts.push(ringPt(t)); }
+      const lane = makeLane(pts, "ring", 24);
+      lane.node = n; lane.yieldType = "none"; lane.turn = "through";
+      lane.ringFrom = approaches[i]; lane.ringTo = approaches[(i+1)%m];
+      ringLanes.push(lane); approaches[i].ringOut = lane;
+    }
+    // entries: from each incoming link to the ring arc starting at its contact
+    approaches.forEach((ap, i)=>{
+      if (!ap.il) return;
+      const fromLane = ap.il.lanes[0];
+      const ringLane = ap.ringOut;                  // arc leaving this contact
+      // entry connector: fromLane end -> ring start
+      const p0 = fromLane.pts[fromLane.pts.length-1];
+      const p3 = ringLane.pts[0];
+      const t0 = ap.il.dir;
+      const cp = add(p0, mul(t0, len(sub(p3,p0))*0.5));
+      const pts = bez(p0, cp, p3, 6);
+      const e = makeLane(pts, "conn", 18);
+      e.node = n; e.inLink = ap.il; e.fromLane = fromLane; e.toLane = ringLane;
+      e.toRing = ringLane; e.turn="through"; e.yieldType = "roundaboutEntry";
+      e.green = true;
+      n.conns.push(e); ap.entry = e;
+      ringLane.entryAt = e;
+    });
+    // exits: from each ring arc end to each outgoing link (we attach an exit at every contact)
+    approaches.forEach((ap, i)=>{
+      const ol = ap.ol;
+      const toLane = ol.lanes[0];
+      // the ring arc that ENDS at this contact is approaches[i-1].ringOut
+      const prev = approaches[(i-1+m)%m];
+      const ringLane = prev.ringOut;
+      const p0 = ringLane.pts[ringLane.pts.length-1];
+      const p3 = toLane.pts[0];
+      const t1 = ol.dir;
+      const cp = add(p3, mul(t1, -len(sub(p3,p0))*0.5));
+      const pts = bez(p0, cp, p3, 6);
+      const x = makeLane(pts, "conn", 20);
+      x.node = n; x.outLink = ol; x.fromLane = ringLane; x.toLane = toLane;
+      x.turn="right"; x.yieldType="none"; x.green = true; x.isExit = true;
+      n.conns.push(x); ap.exit = x;
+      ringLane.exitAt = x;
+    });
+    n.conns.push(...ringLanes);
+    net.conns.push(...n.conns);
+    n.roundabout.ringLanes = ringLanes;
+    n.roundabout.approaches = approaches;
+    // conflicts: ring entry conflicts with the ring lane it merges onto (cars already on ring have priority)
+    n.conns.forEach(c=> c.conflicts = c.conflicts || []);
+    approaches.forEach(ap=>{
+      if (ap.entry && ap.ringOut){ ap.entry.conflicts = [ap.ringOut]; }
+    });
+  }
+  function bez(p0,cp,p3,N){
+    const pts=[];
+    for(let i=0;i<=N;i++){const t=i/N,mt=1-t;
+      pts.push({x:mt*mt*p0.x+2*mt*t*cp.x+t*t*p3.x, y:mt*mt*p0.y+2*mt*t*cp.y+t*t*p3.y});}
+    return pts;
+  }
+
+  // ============================================================ routing
+  // Dijkstra over links (travel time) between portals
+  function routeBetween(srcPortal, dstPortal){
+    // start states = links leaving srcPortal; goal = arriving at dstPortal
+    const distL = new Map(), prev = new Map();
+    const pq = [];
+    srcPortal.links.forEach(l=>{ distL.set(l, l.length/l.speed); pq.push(l); });
+    const visited = new Set();
+    let guard = 0;
+    while (pq.length && guard++ < 5000){
+      // extract min
+      let bi=0; for(let i=1;i<pq.length;i++) if(distL.get(pq[i])<distL.get(pq[bi])) bi=i;
+      const lk = pq.splice(bi,1)[0];
+      if (visited.has(lk)) continue; visited.add(lk);
+      if (lk.to === dstPortal) break;
+      const node = lk.to;
+      if (node.control === "end") continue;
+      // successors: outgoing links reachable via a connector (respect turn restrictions)
+      node.links.forEach(ol=>{
+        if (ol.to === lk.from && node.links.length>2) return; // no U-turn
+        const cost = distL.get(lk) + ol.length/ol.speed + nodePenalty(node);
+        if (!distL.has(ol) || cost < distL.get(ol)){
+          distL.set(ol, cost); prev.set(ol, lk);
+          if (!visited.has(ol)) pq.push(ol);
+        }
+      });
+    }
+    // find best arriving link
+    let best=null, bd=Infinity;
+    dstPortal.incoming.forEach(l=>{ if(distL.has(l) && distL.get(l)<bd){bd=distL.get(l); best=l;} });
+    if (!best) return null;
+    const seq = [];
+    let cur = best;
+    let g=0;
+    while (cur && g++<200){ seq.unshift(cur); cur = prev.get(cur); }
+    return seq;
+  }
+  function nodePenalty(n){
+    if (n.control==="light") return 3.0;
+    if (n.control==="allway") return 2.2;
+    if (n.control==="roundabout") return 1.4;
+    if (n.control==="twoway") return 1.0;
+    return 0.2;
+  }
+
+  // ============================================================ cars
+  function spawnCar(){
+    if (!net.portals || net.portals.length < 2) return;
+    // source portal with a free entry lane
+    const srcs = net.portals.filter(p=> p.links.length>0);
+    if (!srcs.length) return;
+    const src = pick(srcs);
+    const dsts = net.portals.filter(p=> p !== src && p.incoming.length>0);
+    if (!dsts.length) return;
+    const dst = pick(dsts);
+    const route = routeBetween(src, dst);
+    if (!route || route.length<1) return;
+    const first = route[0];
+    // pick an entry lane on the first link with room near the start
+    const lane = pick(first.lanes);
+    // ensure space
+    let occupied = false;
+    for (const c of lane.cars){ if (c.pos < CAR_L*1.6){ occupied=true; break; } }
+    if (occupied) return;
+    const hue = pickCarColor();
+    const car = {
+      id: idSeq++, lane, pos: CAR_L*0.6, v: lane.v0*0.5, latOff: 0,
+      len: CAR_L, w: CAR_W,
+      route, ri: 0,                 // index into route of CURRENT link
+      v0base: 0,                    // desired speed scaler
+      color: hue, committed: null,  // connector it has committed to
+      onConn: false,
+      stuckT: 0, waited: 0, accel: 0,
+      targetLaneIdx: null
+    };
+    car.v0base = 0.86 + rng()*0.3;
+    lane.cars.push(car);
+    cars.push(car);
+    planLaneTarget(car);
+  }
+  const CAR_COLORS = ["#46c6f0","#e8e8ea","#e0e3e8","#7ad0a0","#d98ad0","#f0c050","#e87d5d","#8aa0e8","#c0c6d0","#6fd0c8"];
+  function pickCarColor(){ return CAR_COLORS[rint(CAR_COLORS.length)]; }
+
+  // pick the connector a car will use to leave its current road link
+  function connectorFor(car){
+    const lane = car.lane;
+    if (lane.kind !== "road") return null;
+    if (car.ri >= car.route.length-1) return null;   // last link — nothing to cross into
+    const lk = lane.link;
+    const node = lk.to;
+    if (!node || node.control === "end") return null;
+    const nextLink = car.route[car.ri+1];
+    let candidates = node.conns.filter(c=> c.inLink === lk && c.outLink === nextLink && c.kind==="conn");
+    if (!candidates.length){
+      // fall back: any connector toward next link
+      candidates = node.conns.filter(c=> c.inLink === lk && c.kind==="conn");
+      if (nextLink) candidates = candidates.filter(c=> c.outLink===nextLink).concat(candidates);
+    }
+    if (!candidates.length) return null;
+    // prefer the connector whose source lane matches our lane
+    let best = candidates.find(c=> c.fromLane === lane);
+    if (!best){
+      // closest source lane
+      best = candidates.reduce((p,c)=> Math.abs(c.fromLane.laneIndex-lane.laneIndex) <
+        Math.abs(p.fromLane.laneIndex-lane.laneIndex) ? c : p);
+    }
+    return best;
+  }
+
+  // choose which lane the car should be in to make its next move; set target
+  function planLaneTarget(car){
+    const lane = car.lane;
+    if (lane.kind !== "road"){ car.targetLaneIdx = null; return; }
+    const lk = lane.link;
+    const node = lk.to;
+    if (!node || node.control === "end"){ car.targetLaneIdx = null; return; }
+    const nextLink = car.route[car.ri+1];
+    if (!nextLink){ car.targetLaneIdx = null; return; }
+    let cands = node.conns.filter(c=> c.inLink===lk && c.outLink===nextLink && c.kind==="conn");
+    if (!cands.length){
+      // roundabout entries carry no outLink — aim for the entry connector's source lane
+      cands = node.conns.filter(c=> c.inLink===lk && c.kind==="conn");
+      if (!cands.length){ car.targetLaneIdx = null; return; }
+    }
+    // target = source lane of the best connector; choose nearest available source lane
+    let idxs = cands.map(c=> c.fromLane.laneIndex);
+    // nearest to current
+    let target = idxs.reduce((p,i)=> Math.abs(i-lane.laneIndex)<Math.abs(p-lane.laneIndex)?i:p, idxs[0]);
+    car.targetLaneIdx = target;
+  }
+
+  // ============================================================ leader / gap
+  // returns {gap, vLead} for IDM, treating stop lines and downstream cars as obstacles
+  function senseAhead(car){
+    const lane = car.lane;
+    const front = car.pos + car.len*0.5;
+    // 1) leader on same lane
+    let leader = null;
+    for (const o of lane.cars){
+      if (o === car) continue;
+      if (o.pos > car.pos && (!leader || o.pos < leader.pos)) leader = o;
+    }
+    if (leader){
+      const gap = (leader.pos - leader.len*0.5) - front;
+      return { gap: Math.max(gap, -2), vLead: leader.v };
+    }
+    // distance to lane end
+    let dEnd = lane.length - front;
+    // 2) if on a road approaching a junction and NOT cleared -> maybe stop at line
+    if (lane.kind === "road"){
+      const node = lane.link.to;
+      const lastLink = car.ri >= car.route.length-1;
+      if (!lastLink && node && node.control !== "end"){
+        if (!car.committed){
+          const conn = connectorFor(car);
+          const may = conn ? mayProceed(car, conn) : false;
+          if (!may){
+            // virtual stop a touch before the junction edge
+            return { gap: Math.max(dEnd - 1.5, -2), vLead: 0, stopping:true };
+          }
+        }
+        // cleared: continue, look downstream into connector then exit lane
+        const conn = car.committed || connectorFor(car);
+        return downstreamGap(car, dEnd, conn ? [conn, conn.toLane] : []);
+      } else {
+        // last link of route, or road ends at a portal sink — open road to the exit
+        return { gap: SIGHT, vLead: car.v };
+      }
+    }
+    // 3) on a connector or ring: look at its exit lane
+    if (lane.kind === "conn" || lane.kind === "ring"){
+      const downs = nextLanes(car);
+      return downstreamGap(car, dEnd, downs);
+    }
+    return { gap: SIGHT, vLead: car.v };
+  }
+
+  function downstreamGap(car, dEnd, downLanes){
+    let acc = dEnd;
+    for (const dl of downLanes){
+      if (!dl) break;
+      // first car on dl (smallest pos)
+      let first = null;
+      for (const o of dl.cars){ if (o!==car && (!first || o.pos < first.pos)) first = o; }
+      if (first){
+        const gap = acc + (first.pos - first.len*0.5);
+        return { gap: Math.max(gap, -2), vLead: first.v };
+      }
+      acc += dl.length;
+      if (acc > SIGHT) break;
+    }
+    return { gap: Math.max(acc, SIGHT*0.5), vLead: car.v0base*car.lane.v0 };
+  }
+
+  // the lane(s) downstream of the car's current connector/ring (for sight)
+  function nextLanes(car){
+    const lane = car.lane;
+    if (lane.kind === "conn"){
+      return [lane.toLane];
+    }
+    if (lane.kind === "ring"){
+      // ring continues to either exit (if this car leaves here) or next ring arc
+      const out = ringNext(car, lane);
+      return out ? [out] : [];
+    }
+    return [];
+  }
+
+  // ============================================================ intersection permission
+  // May `car` (currently approaching on a road lane) enter connector `conn`?
+  function mayProceed(car, conn){
+    if (!conn) return false;
+    const node = conn.node;
+    // box-blocking guard: need room on the exit lane
+    if (!exitHasRoom(conn)) {
+      // allow desperation override if fully stuck a long time
+      if (car.stuckT < VANISH_T*0.6) return false;
+    }
+    // already-committed conflicting cars (sticky) block everyone
+    for (const [oc] of node.commits){
+      if (oc === conn) continue;
+      if (conn.conflicts && conn.conflicts.includes(oc)) return false;
+    }
+    // physically-occupied conflicting connectors block (someone mid-crossing)
+    if (conn.conflicts){
+      for (const cc of conn.conflicts){
+        if (cc.cars.length>0) {
+          if (car.stuckT < VANISH_T*0.6) return false;
+        }
+      }
+    }
+    const yt = conn.yieldType;
+    if (yt === "none"){
+      // signalized through/protected: require green
+      if (node.signal){ return conn.green === true; }
+      return true;
+    }
+    if (node.signal && yt === "permissiveLeft"){
+      if (!conn.green) return false;
+      // permissive: also need an oncoming gap
+      return gapAccepted(car, conn);
+    }
+    if (yt === "stop"){
+      // all-way stop: must be nearly stopped, then FIFO
+      return stopOk(car, conn);
+    }
+    if (yt === "yield" || yt === "roundaboutEntry"){
+      return gapAccepted(car, conn);
+    }
+    return true;
+  }
+
+  function exitHasRoom(conn){
+    const exit = conn.toLane;
+    if (!exit) return true;
+    // is there space near the entrance of the exit lane?
+    let firstPos = Infinity;
+    for (const o of exit.cars){ if (o.pos < firstPos) firstPos = o.pos; }
+    return firstPos > CAR_L*1.5;
+  }
+
+  function stopOk(car, conn){
+    const node = conn.node;
+    const front = car.pos + car.len*0.5;
+    const dEnd = car.lane.length - front;
+    // register arrival in FIFO when close & slow
+    if (dEnd < 8 && car.v < 6){
+      if (!node.stopQ.includes(car)) node.stopQ.push(car);
+    }
+    // clean queue of gone cars
+    node.stopQ = node.stopQ.filter(c=> cars.includes(c) && c.lane.kind==="road" && c.lane.link.to===node && !c.committed);
+    // desperation
+    if (car.stuckT > STUCK_T) return clearOfConflicts(car, conn);
+    // must be at front of queue (or queue empty meaning just arrived & clear)
+    const idx = node.stopQ.indexOf(car);
+    if (idx > 0) return false;
+    // and nearly stopped
+    if (car.v > 7 && dEnd > 3) return false;
+    return clearOfConflicts(car, conn);
+  }
+  function clearOfConflicts(car, conn){
+    const node = conn.node;
+    for (const [oc] of node.commits){
+      if (conn.conflicts && conn.conflicts.includes(oc)) return false;
+    }
+    if (conn.conflicts) for (const cc of conn.conflicts) if (cc.cars.length>0) return false;
+    return true;
+  }
+
+  // gap acceptance: yield to cars on conflicting priority connectors AND approaching them
+  function gapAccepted(car, conn){
+    if (car.stuckT > STUCK_T) return clearOfConflicts(car, conn);
+    if (!conn.conflicts) return true;
+    for (const cc of conn.conflicts){
+      // cars already on the conflicting connector/ring
+      if (cc.cars.length>0) return false;
+      // cars approaching that conflicting movement on its source lane
+      const src = cc.fromLane;
+      if (src){
+        // nearest car to the end of src
+        let nearest = null;
+        for (const o of src.cars){ if (!nearest || o.pos > nearest.pos) nearest = o; }
+        if (nearest){
+          const dToEnd = src.length - (nearest.pos + nearest.len*0.5);
+          const tta = dToEnd / Math.max(nearest.v, 6);
+          if (tta < TAU_YIELD && dToEnd < 70) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // ============================================================ ring helpers (roundabout)
+  // Given a car on a ring lane, where does it go next? Either exit here (if its route turns off)
+  // or continue to the next ring arc.
+  function ringNext(car, ringLane){
+    const node = ringLane.node;
+    if (!node.roundabout) return null;
+    const nextLink = car.route[car.ri+1];   // ri tracks the ROAD link the car entered on; route progresses on exit
+    // the ring arc ends at a contact whose approach has an exit toward some outLink
+    const exit = ringLane.exitAt;
+    if (exit && nextLink && exit.outLink === nextLink){
+      return exit;
+    }
+    // otherwise continue around: the next ring arc starts at this arc's end contact
+    const ap = ringLane.ringTo;            // approach at the END of this arc
+    if (ap && ap.ringOut) return ap.ringOut;
+    return exit || null;
+  }
+
+  // ============================================================ advance a car through the graph
+  // returns false if the car despawned
+  function advance(car, dt){
+    let lane = car.lane;
+    // integrate longitudinal motion (IDM accel computed in step())
+    car.v = Math.max(0, car.v + car.accel*dt);
+    let move = car.v*dt;
+    let guard = 0;
+    while (move > 1e-4 && guard++ < 6){
+      const remaining = lane.length - car.pos;
+      if (move < remaining){ car.pos += move; move = 0; break; }
+      // reached end of this lane -> hop to next
+      move -= remaining;
+      const nxt = hopNext(car, lane);
+      if (nxt === "despawn"){ removeCar(car); return false; }
+      if (!nxt){ car.pos = lane.length; car.v = Math.min(car.v, 8); break; }
+      // move car to next lane
+      detach(car, lane);
+      lane = nxt; car.lane = lane; car.pos = 0;
+      attach(car, lane);
+      onEnterLane(car, lane);
+    }
+    return true;
+  }
+
+  function hopNext(car, lane){
+    if (lane.kind === "road"){
+      // completed the route (arrived at destination portal) -> leave the map
+      if (car.ri >= car.route.length-1) return "despawn";
+      const node = lane.link.to;
+      if (!node || node.control === "end"){
+        // reached a portal sink
+        return "despawn";
+      }
+      const conn = car.committed || connectorFor(car);
+      if (!conn) return "despawn";
+      car.committed = conn;
+      return conn;
+    }
+    if (lane.kind === "conn"){
+      // entering its exit road lane (or ring lane for roundabout entries)
+      const out = lane.toLane;
+      car.committed = null;
+      if (out && out.kind === "road"){
+        // advance route pointer to the road link we just entered
+        car.ri++;
+      }
+      return out;
+    }
+    if (lane.kind === "ring"){
+      const out = ringNext(car, lane);
+      if (!out) return "despawn";
+      if (out.kind === "conn"){
+        // it's an exit connector leaving the roundabout
+        car.committed = out; // commit through exit
+        return out;
+      }
+      return out; // next ring arc
+    }
+    return null;
+  }
+
+  function onEnterLane(car, lane){
+    car.committed = (lane.kind === "conn" || lane.kind==="ring") ? car.committed : null;
+    if (lane.kind === "road"){
+      car.onConn = false;
+      // check if this road's downstream node is a portal sink and this is the final link
+      planLaneTarget(car);
+    } else {
+      car.onConn = true;
+    }
+    // clear from any stop queue
+  }
+
+  function attach(car, lane){ lane.cars.push(car); }
+  function detach(car, lane){ const i = lane.cars.indexOf(car); if (i>=0) lane.cars.splice(i,1); }
+  function removeCar(car){
+    detach(car, car.lane);
+    const i = cars.indexOf(car); if (i>=0) cars.splice(i,1);
+    // release any crossing reservation this car held
+    if (car.committed && car.committed.node && car.committed.node.commits){
+      const cm = car.committed.node.commits;
+      if (cm.get(car.committed) === car) cm.delete(car.committed);
+    }
+  }
+
+  // ============================================================ simulation step
+  function step(dt){
+    // clock
+    const cs = (+ui.clockspeed.value)/100;          // 1.0 ~ default
+    clock = (clock + dt * cs * 0.18) % 24;           // ~ a few real minutes per day at default
+
+    // spawn demand
+    let demand;
+    if (ui.autodemand.checked){
+      demand = rushDemand(clock);
+    } else {
+      demand = (+ui.demand.value)/100;
+    }
+    demand *= (+ui.demand.value)/100;                // slider scales either way
+    const baseRate = demand * net.portals.length * 0.55;
+    spawnAcc += baseRate * dt;
+    let budget = 6;
+    while (spawnAcc >= 1 && budget-- > 0){ spawnAcc -= 1; if (cars.length < 480) spawnCar(); }
+
+    // signals
+    for (const n of net.nodes) if (n.signal) updateSignal(n, dt);
+
+    // keep lane car-lists sorted by pos (ascending)
+    for (const l of net.lanes) if (l.cars.length>1) l.cars.sort((a,b)=> a.pos-b.pos);
+    for (const c of net.conns) if (c.cars.length>1) c.cars.sort((a,b)=> a.pos-b.pos);
+
+    // commit pass: let approaching front cars lock crossings deterministically (by id)
+    const approaching = [];
+    for (const car of cars){
+      if (car.lane.kind==="road" && !car.committed && car.ri < car.route.length-1){
+        const node = car.lane.link.to;
+        if (node && node.control!=="end"){
+          const dEnd = car.lane.length - (car.pos+car.len*0.5);
+          if (dEnd < COMMIT_DIST + 4){
+            // only the front car of the lane may claim a crossing
+            let isFront = true;
+            for (const o of car.lane.cars){ if (o!==car && o.pos>car.pos){ isFront=false; break; } }
+            if (isFront) approaching.push(car);
+          }
+        }
+      }
+    }
+    approaching.sort((a,b)=> a.id-b.id);
+    for (const car of approaching){
+      const conn = connectorFor(car);
+      if (!conn) continue;
+      if (mayProceed(car, conn)){
+        const dEnd = car.lane.length - (car.pos+car.len*0.5);
+        if (dEnd < COMMIT_DIST || car.v < 3){
+          car.committed = conn;
+          conn.node.commits.set(conn, car);
+          // leave stop queue
+          const q = conn.node.stopQ; const qi = q.indexOf(car); if (qi>=0) q.splice(qi,1);
+        }
+      }
+    }
+    // release commits whose car has fully left the connector
+    for (const n of net.nodes){
+      if (!n.commits.size) continue;
+      for (const [conn, car] of Array.from(n.commits)){
+        if (!cars.includes(car)) { n.commits.delete(conn); continue; }
+        // released once the car is past the connector (on a downstream road/ring)
+        if (car.committed !== conn && car.lane !== conn) n.commits.delete(conn);
+      }
+    }
+
+    // IDM accelerations
+    for (const car of cars){
+      const sense = senseAhead(car);
+      let v0 = car.v0base * car.lane.v0;
+      // slow for an upcoming sharper connector while still on the road
+      if (car.lane.kind === "road" && !car.committed){
+        const conn = connectorFor(car);
+        if (conn){
+          const dEnd = car.lane.length - (car.pos+car.len*0.5);
+          if (dEnd < 55) v0 = Math.min(v0, Math.max(conn.v0, 16));
+        }
+      }
+      car.accel = idmAccel(car.v, v0, sense.gap, sense.vLead);
+    }
+
+    // integrate + hop
+    for (let i=cars.length-1;i>=0;i--){
+      const car = cars[i];
+      const alive = advance(car, dt);
+      if (!alive){ throughput++; continue; }
+      // stuck tracking
+      if (car.v < 3){ car.stuckT += dt; } else { car.stuckT = 0; }
+      if (car.stuckT > VANISH_T){ removeCar(car); }
+    }
+
+    // lateral lane changes (cheap, on road lanes)
+    for (const car of cars) updateLaneChange(car, dt);
+  }
+
+  function idmAccel(v, v0, gap, vLead){
+    v0 = Math.max(6, v0);
+    gap = Math.max(gap, 0.1);
+    const dv = v - vLead;
+    const sStar = IDM.s0 + Math.max(0, v*IDM.T + (v*dv)/(2*Math.sqrt(IDM.a*IDM.b)));
+    let a = IDM.a*(1 - Math.pow(v/v0, IDM.delta) - Math.pow(sStar/gap, 2));
+    return clamp(a, -IDM.b*1.8, IDM.a);
+  }
+
+  // lane changing toward target lane for the upcoming turn
+  function updateLaneChange(car, dt){
+    // animate lateral offset back to 0
+    if (Math.abs(car.latOff) > 0.05){ car.latOff *= Math.pow(0.0001, dt); if (Math.abs(car.latOff)<0.05) car.latOff=0; }
+    const lane = car.lane;
+    if (lane.kind !== "road") return;
+    if (car.committed) return;
+    if (car.targetLaneIdx == null) return;
+    const lk = lane.link;
+    if (car.targetLaneIdx === lane.laneIndex) return;
+    if (lane.length - car.pos < 18) return;     // too close to junction to change
+    const dir = car.targetLaneIdx > lane.laneIndex ? 1 : -1;
+    const wantIdx = lane.laneIndex + dir;
+    const target = lk.lanes[wantIdx];
+    if (!target) return;
+    // gap check on target lane around car.pos
+    let ok = true;
+    for (const o of target.cars){
+      if (Math.abs(o.pos - car.pos) < CAR_L*1.7){ ok=false; break; }
+    }
+    if (!ok) return;
+    // perform change: record lateral offset for smooth visual
+    const before = lateralOf(lane, car.pos);
+    detach(car, lane);
+    car.lane = target; attach(car, target);
+    const after = lateralOf(target, car.pos);
+    car.latOff = (before - after);   // will animate to 0
+    planLaneTarget(car);
+  }
+  function lateralOf(lane, pos){
+    // approximate lane lateral position as signed offset along its normal — use lane index
+    return (lane.link ? lane.laneIndex : 0) * LANE_W;
+  }
+
+  // ============================================================ demand curve
+  function rushDemand(h){
+    // base low at night, two commuter peaks
+    const morning = Math.exp(-Math.pow((h-8.0)/1.1, 2));
+    const evening = Math.exp(-Math.pow((h-17.6)/1.3, 2));
+    const midday  = 0.42*Math.exp(-Math.pow((h-13)/3.0, 2));
+    let night = 0.10;
+    let d = night + 1.15*morning + 1.25*evening + midday;
+    return clamp(d, 0.06, 1.5);
+  }
+  function dayPhase(h){
+    if (h>=6 && h<9) return "Morning rush";
+    if (h>=9 && h<12) return "Mid-morning";
+    if (h>=12 && h<15) return "Midday";
+    if (h>=15 && h<16.5) return "Afternoon";
+    if (h>=16.5 && h<19) return "Evening rush";
+    if (h>=19 && h<22) return "Evening";
+    return "Overnight";
+  }
+  // darkness 0 (noon) .. 1 (deep night)
+  function darknessAt(h){
+    // smooth: bright ~ 8-18, dark ~ 21-5
+    const x = Math.cos((h-13.5)/24*TAU); // ~1 at ~13.5
+    let day = clamp((x+0.15)/0.95, 0, 1);
+    return clamp(1-day, 0, 1);
+  }
+
+  // ============================================================ rendering
+  function resize(){
+    const r = stage.getBoundingClientRect();
+    W = Math.max(320, r.width|0); H = Math.max(240, r.height|0);
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    for (const cnv of [cv, roadCan]){ cnv.width = W*DPR; cnv.height = H*DPR; }
+    cv.style.width = W+"px"; cv.style.height = H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    roadCtx.setTransform(DPR,0,0,DPR,0,0);
+  }
+
+  function buildRoadLayer(){
+    const c = roadCtx;
+    c.clearRect(0,0,W,H);
+    // ground
+    c.fillStyle = "#11161d"; c.fillRect(0,0,W,H);
+    // subtle blocks / parcels between roads
+    c.fillStyle = "rgba(255,255,255,0.012)";
+    for (let i=0;i<70;i++){
+      const x=rngStatic(i*3+1)*W, y=rngStatic(i*3+2)*H, s=20+rngStatic(i*3+3)*60;
+      c.fillRect(x,y,s,s*0.7);
+    }
+
+    // road surface: draw each road as a thick stroke between node centers
+    for (const road of net.roads){
+      const a = road.a, b = road.b;
+      const wdt = road.lanes*2*LANE_W + 3;
+      c.lineCap = "butt";
+      c.strokeStyle = "#262d36";
+      c.lineWidth = wdt+5;
+      line(c, a.x,a.y,b.x,b.y);
+      c.strokeStyle = road.arterial ? "#3a424d" : "#333a43";
+      c.lineWidth = wdt;
+      line(c, a.x,a.y,b.x,b.y);
+    }
+    // junction discs
+    for (const n of net.nodes){
+      if (n.kind==="end") continue;
+      c.fillStyle = "#333a43";
+      circle(c, n.x, n.y, n.radius+1.5, true);
+    }
+    // roundabout islands
+    for (const n of net.nodes){
+      if (n.control!=="roundabout" || !n.roundabout) continue;
+      const R = n.roundabout.R;
+      c.fillStyle = "#333a43"; circle(c, n.x,n.y,R+LANE_W+3,true);
+      c.fillStyle = "#1d3026"; circle(c, n.x,n.y,R-LANE_W*0.6,true);  // grassy island
+      c.strokeStyle = "rgba(255,255,255,0.12)"; c.lineWidth=1.4;
+      circle(c, n.x,n.y,R-LANE_W*0.6,false);
+    }
+
+    // lane markings
+    c.lineWidth = 1.2;
+    for (const road of net.roads){
+      const a = road.a, b = road.b;
+      const d = norm(sub(b,a));
+      const nl = { x:-d.y, y:d.x };
+      const La = add(a, mul(d, road.a.radius));
+      const Lb = add(b, mul(d, -road.b.radius));
+      // center double line (separates the two directions)
+      c.strokeStyle = "rgba(240,200,90,0.5)";
+      dashLine(c, La.x,La.y,Lb.x,Lb.y, 9, 7);
+      // lane dividers within each direction (white dashed)
+      c.strokeStyle = "rgba(220,230,245,0.28)";
+      for (let side of [1,-1]){
+        for (let i=1;i<road.lanes;i++){
+          const off = side*(i*LANE_W);
+          const p0 = add(La, mul(nl, off)), p1 = add(Lb, mul(nl, off));
+          dashLine(c, p0.x,p0.y,p1.x,p1.y, 7, 9);
+        }
+      }
+    }
+
+    // stop lines / crosswalks at controlled approaches
+    for (const n of net.nodes){
+      if (n.control==="end" || n.control==="through") continue;
+      n.incoming.forEach(il=>{
+        const stopP = add(n, mul(il.dir, -(n.radius)));
+        const nl = il.nrm;
+        const half = il.lanesN*LANE_W;
+        if (n.control==="light"){
+          // crosswalk stripes
+          c.strokeStyle = "rgba(230,240,255,0.5)"; c.lineWidth=2;
+          line(c, stopP.x - nl.x*half, stopP.y - nl.y*half, stopP.x, stopP.y);
+          c.strokeStyle="rgba(230,240,255,0.35)";
+          c.lineWidth=1.6;
+        } else if (n.control==="allway"){
+          // solid white stop bar across the right side
+          c.strokeStyle="rgba(235,240,250,0.55)"; c.lineWidth=2.2;
+          line(c, stopP.x, stopP.y, stopP.x - nl.x*half, stopP.y - nl.y*half);
+        } else if (n.control==="twoway"){
+          if (!il.road.arterial){
+            c.strokeStyle="rgba(235,240,250,0.5)"; c.lineWidth=2;
+            line(c, stopP.x, stopP.y, stopP.x - nl.x*half, stopP.y - nl.y*half);
+          }
+        }
+      });
+    }
+  }
+  // a tiny static prng for decorative parcels (independent of sim seed)
+  function rngStatic(i){ const x = Math.sin(i*127.1+311.7)*43758.5453; return x-Math.floor(x); }
+
+  function line(c,x0,y0,x1,y1){ c.beginPath(); c.moveTo(x0,y0); c.lineTo(x1,y1); c.stroke(); }
+  function dashLine(c,x0,y0,x1,y1,on,off){ c.save(); c.setLineDash([on,off]); line(c,x0,y0,x1,y1); c.restore(); }
+  function circle(c,x,y,r,fill){ c.beginPath(); c.arc(x,y,r,0,TAU); if(fill)c.fill(); else c.stroke(); }
+
+  function draw(){
+    // base
+    ctx.fillStyle = "#0d1117"; ctx.fillRect(0,0,W,H);
+    ctx.drawImage(roadCan, 0,0, W, H);
+
+    const dark = ui.shownight.checked ? darknessAt(clock) : 0;
+
+    // signals
+    drawSignals(dark);
+
+    // cars
+    drawCars(dark);
+
+    // night overlay (after cars so headlights read; we tint cars subtly via overlay)
+    if (dark > 0.02){
+      const g = ctx.createLinearGradient(0,0,0,H);
+      const a = dark*0.5;
+      g.addColorStop(0, `rgba(8,12,30,${a*0.9})`);
+      g.addColorStop(1, `rgba(4,6,20,${a})`);
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      // headlight glow re-draw on top for night
+      drawHeadlights(dark);
+    }
+
+    // inspector
+    if (tool==="inspect" && hoverInfo) drawInspector();
+
+    drawHud();
+    requestAnimationFrame(loop);
+  }
+
+  function carColorByState(car){
+    if (car.v < 2.5) return "#e85d5d";
+    if (car.accel < -10 || car.v < car.lane.v0*car.v0base*0.45) return "#f0b24a";
+    return car.color;
+  }
+
+  function drawCars(dark){
+    for (const car of cars){
+      const p = lanePoint(car.lane, car.pos);
+      // lateral offset for lane-change animation
+      const nx = -p.dy, ny = p.dx;
+      const x = p.x + nx*car.latOff*0.0, y = p.y + ny*car.latOff*0.0;
+      const ang = Math.atan2(p.dy, p.dx);
+      ctx.save();
+      ctx.translate(x + nx*car.latOff, y + ny*car.latOff);
+      ctx.rotate(ang);
+      // body
+      const stalled = car.stalled;
+      let col = stalled ? "#9aa0aa" : car.color;
+      ctx.fillStyle = col;
+      roundRect(ctx, -car.len/2, -car.w/2, car.len, car.w, 1.8);
+      ctx.fill();
+      // windshield hint
+      ctx.fillStyle = "rgba(20,30,45,0.55)";
+      roundRect(ctx, car.len*0.05, -car.w/2+1, car.len*0.3, car.w-2, 1.2);
+      ctx.fill();
+      // state stripe (brake/stop)
+      const st = carColorByState(car);
+      if (st !== car.color){
+        ctx.fillStyle = st;
+        ctx.fillRect(-car.len/2, -car.w/2, 2.2, car.w);
+      }
+      // taillights when braking / at night
+      if (car.accel < -6 || dark>0.25){
+        ctx.fillStyle = car.accel<-6 ? "rgba(255,70,60,0.95)" : "rgba(180,40,30,0.7)";
+        ctx.fillRect(-car.len/2, -car.w/2, 1.4, 1.6);
+        ctx.fillRect(-car.len/2, car.w/2-1.6, 1.4, 1.6);
+      }
+      ctx.restore();
+    }
+  }
+  function drawHeadlights(dark){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (const car of cars){
+      if (car.stalled) continue;
+      const p = lanePoint(car.lane, car.pos);
+      const fx = p.x + p.dx*car.len*0.5, fy = p.y + p.dy*car.len*0.5;
+      const g = ctx.createRadialGradient(fx,fy,0, fx,fy, 16);
+      const a = 0.16*dark;
+      g.addColorStop(0, `rgba(255,245,210,${a})`);
+      g.addColorStop(1, "rgba(255,245,210,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(fx + p.dx*8, fy + p.dy*8, 16, 0, TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawSignals(dark){
+    for (const n of net.nodes){
+      if (n.control==="light" && n.signal){
+        n.incoming.forEach(il=>{
+          // aggregate this approach's permission
+          const conns = n.conns.filter(c=> c.inLink===il && c.kind==="conn");
+          let g=false,y=false;
+          conns.forEach(c=>{ if(c.green) g=true; if(c.yellow) y=true; });
+          const state = g ? "g" : (y ? "y" : "r");
+          // position: just right of the stop line
+          const stopP = add(n, mul(il.dir, -(n.radius+5)));
+          const right = { x: il.dir.y, y: -il.dir.x };
+          const px = stopP.x + right.x*(il.lanesN*LANE_W+3);
+          const py = stopP.y + right.y*(il.lanesN*LANE_W+3);
+          drawSignalHead(px,py, state, il.dir);
+        });
+      } else if (n.control==="allway" || n.control==="twoway"){
+        // small sign markers
+        n.incoming.forEach(il=>{
+          const isStop = (n.control==="allway") || (n.control==="twoway" && !il.road.arterial);
+          if (!isStop) return;
+          const stopP = add(n, mul(il.dir, -(n.radius+6)));
+          const right = { x: il.dir.y, y: -il.dir.x };
+          const px = stopP.x + right.x*(il.lanesN*LANE_W+2);
+          const py = stopP.y + right.y*(il.lanesN*LANE_W+2);
+          drawSign(px,py, n.control==="allway" ? "stop" : "yieldOrStop", il.road.arterial);
+        });
+      } else if (n.control==="twoway"){
+      }
+    }
+  }
+  function drawSignalHead(x,y,state,dir){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.fillStyle = "rgba(15,18,24,0.92)";
+    roundRect(ctx, -3, -8.5, 6, 17, 2.2); ctx.fill();
+    const cols = { r:"#e85d5d", y:"#f0c24a", g:"#5fd06a" };
+    const ypos = { r:-5, y:0, g:5 };
+    for (const s of ["r","y","g"]){
+      ctx.beginPath(); ctx.arc(0, ypos[s], 2.0, 0, TAU);
+      ctx.fillStyle = (state===s) ? cols[s] : "rgba(255,255,255,0.10)";
+      ctx.fill();
+      if (state===s){
+        ctx.shadowColor = cols[s]; ctx.shadowBlur = 6;
+        ctx.fill(); ctx.shadowBlur = 0;
+      }
+    }
+    ctx.restore();
+  }
+  function drawSign(x,y,kind,arterial){
+    ctx.save(); ctx.translate(x,y);
+    if (kind==="stop"){
+      ctx.fillStyle="#c0392b"; ctx.strokeStyle="rgba(255,255,255,0.8)"; ctx.lineWidth=0.8;
+      polygon(ctx, 0,0, 4.4, 8, Math.PI/8); ctx.fill();
+      ctx.fillStyle="#fff"; ctx.font="bold 3.2px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText("STOP",0,0.2);
+    } else {
+      // yield triangle for minor stop in twoway
+      ctx.fillStyle="#c0392b"; polygon(ctx,0,0,4.4,8,Math.PI/8); ctx.fill();
+      ctx.fillStyle="#fff"; ctx.font="bold 3px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+      ctx.fillText("STOP",0,0.2);
+    }
+    ctx.restore();
+  }
+  function polygon(c,x,y,r,sides,rot){
+    c.beginPath();
+    for(let i=0;i<sides;i++){ const a=rot+i/sides*TAU; const px=x+Math.cos(a)*r, py=y+Math.sin(a)*r; i?c.lineTo(px,py):c.moveTo(px,py);}
+    c.closePath();
+  }
+
+  function roundRect(c,x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    c.beginPath();
+    c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+  }
+
+  // ---- inspector overlay ----
+  function drawInspector(){
+    const info = hoverInfo;
+    ctx.save();
+    if (info.node){
+      const n = info.node;
+      ctx.strokeStyle = "rgba(95,208,200,0.9)"; ctx.lineWidth=2;
+      circle(ctx, n.x, n.y, n.radius+4, false);
+    } else if (info.road){
+      const r = info.road;
+      ctx.strokeStyle = "rgba(95,208,200,0.8)"; ctx.lineWidth=2;
+      line(ctx, r.a.x,r.a.y,r.b.x,r.b.y);
+    }
+    ctx.restore();
+    // tooltip box
+    const lines = info.lines;
+    ctx.font = "12px ui-sans-serif, system-ui, sans-serif";
+    let wMax = 0; lines.forEach(l=> wMax = Math.max(wMax, ctx.measureText(l.replace(/^\*\*|\*\*$/g,'')).width));
+    const bw = wMax + 20, bh = lines.length*16 + 12;
+    let bx = mouse.x + 16, by = mouse.y + 14;
+    if (bx+bw > W) bx = mouse.x - bw - 12;
+    if (by+bh > H) by = mouse.y - bh - 10;
+    ctx.fillStyle = "rgba(14,18,26,0.94)"; ctx.strokeStyle="rgba(150,175,210,0.25)";
+    roundRect(ctx, bx, by, bw, bh, 8); ctx.fill(); ctx.stroke();
+    ctx.textBaseline = "top";
+    lines.forEach((l,i)=>{
+      const bold = l.startsWith("**");
+      const text = l.replace(/^\*\*|\*\*$/g,'');
+      ctx.fillStyle = bold ? "#e9eef6" : "#9fb0c4";
+      ctx.font = (bold?"600 ":"")+"12px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText(text, bx+10, by+8+i*16);
+    });
+  }
+
+  // ============================================================ HUD
+  let hudAcc = 0;
+  function drawHud(){
+    // clock string
+    const hh = Math.floor(clock), mm = Math.floor((clock-hh)*60);
+    const ap = hh<12?"am":"pm"; let h12 = hh%12; if(h12===0) h12=12;
+    ui.clock.textContent = `${h12}:${mm<10?"0":""}${mm}${ap}`;
+    ui.phaseLab.textContent = dayPhase(clock);
+    ui.vehLab.textContent = cars.length + " cars";
+
+    // metrics
+    let sumV=0, n=0, stopped=0;
+    for (const c of cars){ sumV += c.v; n++; if (c.v<3) stopped++; }
+    const avg = n? sumV/n : 0;
+    const cong = n ? stopped/n : 0;
+    // smooth flow %: avg speed relative to a nominal cruising speed
+    avgSpeedSmoothed = lerp(avgSpeedSmoothed, avg, 0.08);
+    const flow = clamp(avgSpeedSmoothed/55, 0, 1);
+    ui.flowBar.style.width = (flow*100).toFixed(0)+"%";
+    ui.flowBar.style.background = flow>0.6?"#5fd0c8":flow>0.33?"#f0b24a":"#e85d5d";
+    ui.congBar.style.width = (cong*100).toFixed(0)+"%";
+    ui.flowPct.textContent = (flow*100).toFixed(0)+"%";
+    ui.congPct.textContent = (cong*100).toFixed(0)+"%";
+
+    // sparkline of congestion
+    hudAcc++;
+    if (hudAcc % 6 === 0){
+      congHist[histHead] = cong; histHead = (histHead+1)%histLen;
+    }
+    drawSpark();
+  }
+  function drawSpark(){
+    sctx.clearRect(0,0,spark.width,spark.height);
+    sctx.fillStyle = "rgba(0,0,0,0.25)"; sctx.fillRect(0,0,spark.width,spark.height);
+    sctx.beginPath();
+    for (let i=0;i<histLen;i++){
+      const idx = (histHead+i)%histLen;
+      const v = congHist[idx];
+      const x = i/(histLen-1)*spark.width;
+      const y = spark.height - v*spark.height*0.92 - 2;
+      i?sctx.lineTo(x,y):sctx.moveTo(x,y);
+    }
+    sctx.strokeStyle = "#f0b24a"; sctx.lineWidth=1.4; sctx.stroke();
+    sctx.lineTo(spark.width, spark.height); sctx.lineTo(0,spark.height); sctx.closePath();
+    sctx.fillStyle = "rgba(240,178,74,0.16)"; sctx.fill();
+  }
+
+  // ============================================================ main loop
+  function loop(t){
+    if (!lastT) lastT = t;
+    let dt = (t - lastT)/1000; lastT = t;
+    dt = Math.min(dt, 0.05);
+    if (running){
+      const ss = (+ui.simspeed.value)/100;
+      let sdt = dt*ss;
+      // substep for stability at high speed
+      const steps = Math.min(4, Math.ceil(sdt/0.035));
+      for (let i=0;i<steps;i++) step(sdt/steps);
+    }
+    draw();
+  }
+
+  // ============================================================ interaction
+  function worldFromEvent(e){
+    const r = cv.getBoundingClientRect();
+    return { x: (e.clientX - r.left), y: (e.clientY - r.top) };
+  }
+  function nearestRoad(x,y){
+    let best=null, bd=14;
+    for (const road of net.roads){
+      const d = distToSeg(x,y, road.a, road.b);
+      if (d < bd){ bd=d; best=road; }
+    }
+    return best;
+  }
+  function nearestNode(x,y){
+    let best=null, bd=1e9;
+    for (const n of net.nodes){
+      if (n.kind==="end") continue;
+      const d = Math.hypot(n.x-x, n.y-y);
+      if (d < n.radius+8 && d<bd){ bd=d; best=n; }
+    }
+    return best;
+  }
+  function distToSeg(px,py,a,b){
+    const dx=b.x-a.x, dy=b.y-a.y; const l2=dx*dx+dy*dy||1;
+    let t=((px-a.x)*dx+(py-a.y)*dy)/l2; t=clamp(t,0,1);
+    return Math.hypot(px-(a.x+dx*t), py-(a.y+dy*t));
+  }
+
+  function updateHover(x,y){
+    hoverInfo = null;
+    const n = nearestNode(x,y);
+    if (n){
+      const names = { light:"Traffic light", allway:"All-way stop", twoway:"Two-way stop",
+        roundabout:"Roundabout", through:"Through road", end:"Terminus" };
+      const lines = [`**${names[n.control]||n.control}`];
+      lines.push(`${n.links.length} approaches`);
+      if (n.control==="light" && n.signal){
+        lines.push(`${n.signal.phases.length} phases · ${n.turnLanes?"protected":"permissive"} lefts`);
+        const ph = n.signal.phases[n.signal.idx];
+        lines.push(`now: ${n.signal.stage}${ph.kind==="left"?" (turn)":""}`);
+      }
+      lines.push("click (junction tool) to change");
+      hoverInfo = { node:n, lines };
+      return;
+    }
+    const road = nearestRoad(x,y);
+    if (road){
+      const lines = [`**${road.arterial?"Arterial":"Local street"}`];
+      lines.push(`${road.lanes} lane${road.lanes>1?"s":""} each way`);
+      lines.push(`limit ≈ ${Math.round(road.speed)} px/s`);
+      // count cars on this road
+      let cc=0; [road.fwd,road.rev].forEach(lk=> lk.lanes.forEach(l=> cc+=l.cars.length));
+      lines.push(`${cc} cars on segment`);
+      hoverInfo = { road, lines };
+    }
+  }
+
+  stage.addEventListener("mousemove", (e)=>{
+    const p = worldFromEvent(e); mouse.x=p.x; mouse.y=p.y; mouse.in=true;
+    if (tool==="inspect") updateHover(p.x,p.y);
+  });
+  stage.addEventListener("mouseleave", ()=>{ mouse.in=false; hoverInfo=null; });
+
+  stage.addEventListener("click", (e)=>{
+    const p = worldFromEvent(e);
+    if (tool==="incident"){
+      placeIncident(p.x,p.y);
+    } else if (tool==="signal"){
+      const n = nearestNode(p.x,p.y);
+      if (n && n.kind==="junction") cycleControl(n);
+    }
+  });
+
+  function placeIncident(x,y){
+    // stall the nearest car on the nearest road for a few seconds
+    const road = nearestRoad(x,y);
+    let target=null, bd=1e9;
+    const lanesToScan = road ? [road.fwd,road.rev].flatMap(lk=>lk.lanes) : net.lanes;
+    for (const lane of lanesToScan){
+      for (const c of lane.cars){
+        const p = lanePoint(lane, c.pos);
+        const d = Math.hypot(p.x-x,p.y-y);
+        if (d<bd){ bd=d; target=c; }
+      }
+    }
+    if (target && bd < 40){
+      target.stalled = true; target.v = 0; target.v0base = 0;
+      setTimeout(()=>{ if (cars.includes(target)){ target.stalled=false; target.v0base = 0.86+Math.random()*0.3; } }, 4500);
+      flashHint("🚧 Stalled car dropped — watch the queue build and ripple backward.");
+    } else {
+      flashHint("Click closer to a road with traffic to drop an incident.");
+    }
+  }
+
+  function cycleControl(n){
+    const order = ["light","allway","twoway","roundabout"];
+    let i = order.indexOf(n.control);
+    i = (i+1)%order.length;
+    setControl(n, order[i]);
+    // some controls require fresh connectors/conflicts (roundabout swaps geometry)
+    if (order[i] !== "roundabout" && !n.roundabout){
+      buildConflicts(n);
+    }
+    buildRoadLayer();
+    const names={light:"traffic light",allway:"all-way stop",twoway:"two-way stop",roundabout:"roundabout"};
+    flashHint("Junction → "+names[n.control]);
+  }
+
+  let hintTimer=null;
+  function flashHint(msg){
+    ui.hint.innerHTML = msg;
+    ui.hint.style.opacity = 1;
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(()=>{ ui.hint.style.opacity = 0.0; }, 4200);
+  }
+
+  // tool buttons
+  document.querySelectorAll("#tools .tool").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#tools .tool").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on"); tool = b.dataset.tool;
+      stage.style.cursor = tool==="inspect" ? "crosshair" : "pointer";
+      if (tool!=="inspect") hoverInfo=null;
+    });
+  });
+  ui.play.addEventListener("click", ()=>{
+    running = !running;
+    ui.play.querySelector(".ico").textContent = running ? "⏸" : "▶";
+    ui.play.querySelector(".txt").textContent = running ? "Pause" : "Play";
+  });
+  ui.regen.addEventListener("click", ()=>{ seed = (seed*2654435761>>>0) ^ (Date.now()&0xffff); generate(); flashHint("New city generated."); });
+
+  window.addEventListener("keydown",(e)=>{
+    if (e.key===" "){ e.preventDefault(); ui.play.click(); }
+    else if (e.key==="r"||e.key==="R"){ ui.regen.click(); }
+    else if (e.key==="1"){ document.querySelector('[data-tool=inspect]').click(); }
+    else if (e.key==="2"){ document.querySelector('[data-tool=incident]').click(); }
+    else if (e.key==="3"){ document.querySelector('[data-tool=signal]').click(); }
+  });
+
+  let resizeT=null;
+  window.addEventListener("resize", ()=>{
+    clearTimeout(resizeT);
+    resizeT = setTimeout(()=>{ resize(); generate(); }, 150);
+  });
+
+  // ============================================================ boot
+  seed = (Date.now()>>>0) || 12345;
+  resize();
+  generate();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
